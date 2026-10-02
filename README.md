@@ -6,8 +6,8 @@ Live: https://vj-ranga.github.io/Quote-studio/
 
 | Page | What it prices | Tests |
 |---|---|---|
-| `index.html` | Social media packages (monthly and one-off) | `index.html?test=1` (26 tests) |
-| `website-it.html` | Website Care, SEO, IT support (remote and on-site) | `website-it.html?test=1` (17 tests) |
+| `index.html` | Social media packages (monthly and one-off) | `index.html?test=1` (22 tests) |
+| `website-it.html` | Website Care, SEO, IT support (remote and on-site) | `website-it.html?test=1` (23 tests) |
 
 Prices and wording live in the `CONFIG` object at the top of each page's script. Shared styles are in `styles.css`.
 

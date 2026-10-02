@@ -25,7 +25,7 @@
         <div class="step-head"><span class="step-no">1</span><div class="grow"><h2>Billing</h2><p>Ongoing management or a short campaign.</p></div></div>
         <div class="mode" role="group" aria-label="Billing mode">
           <button type="button" data-mode="monthly" class="active" aria-pressed="true">Monthly management<small>Management fee included</small></button>
-          <button type="button" data-mode="oneoff" aria-pressed="false">One-off campaign<small>Single campaign · +20%</small></button>
+          <button type="button" data-mode="oneoff" aria-pressed="false">One-off campaign<small>No contract · single prices</small></button>
         </div>
       </section>
       <section class="step">
@@ -34,7 +34,9 @@
         <div class="plan-status" id="basedLabel" aria-live="polite"></div>
       </section>
       <section class="step">
-        <div class="step-head"><span class="step-no">3</span><div class="grow"><h2>Platforms</h2><p>Management is charged per platform.</p></div></div>
+        <div class="step-head"><span class="step-no">3</span><div class="grow"><h2>Platforms</h2><p>Where the content goes. Management is charged per platform.</p></div></div>
+        <label class="toggle" for="manageToggle" style="margin-bottom:12px"><span>We manage these platforms<small id="manageHint">Posting, scheduling and monthly report · from Rs 500 per platform</small></span><input type="checkbox" id="manageToggle" checked></label>
+        <label class="toggle" for="inboxToggle" style="margin-bottom:12px"><span>Inbox &amp; comment replies<small id="inboxHint">Reply to messages and comments within 24 hours, Mon–Sat · Rs 1,000 per platform</small></span><input type="checkbox" id="inboxToggle"></label>
         <div class="platforms" id="platforms"></div>
       </section>
       <section class="step">
@@ -71,9 +73,11 @@
     const CONFIG = {
       currency: "Rs",
       content: {
-        staticPost:      { label: "Static post",               price: 1000, desc: "Designed graphic post with caption and hashtags, sized for each platform." },
-        reel:            { label: "Reel / short video",         price: 2000, desc: "Short vertical video: editing, text captions, music and cover image." },
-        adCampaign:      { label: "Ad campaign setup & management", price: 2000, desc: "Audience targeting, ad creative set-up, budget pacing, monitoring and a results summary. Ad spend is not included." },
+        staticPost:      { label: "Static post",               price: 1500, singlePrice: 2000, desc: "Designed graphic post with caption and hashtags, sized for each platform." },
+        dualPost:        { label: "Post in 2 sizes",            price: 2000, singlePrice: 2500, desc: "One design adapted for Instagram (1080×1080 square) and Facebook (1200×630 landscape)." },
+        reel:            { label: "Reel / short video",         price: 2500, singlePrice: 3000, desc: "Short vertical video: editing, text captions, music and cover image." },
+        aiVideo:         { label: "AI video",                   price: 3500, singlePrice: 4000, desc: "AI-generated short video: script, generation, editing and captions." },
+        adCampaign:      { label: "Ad campaign setup & management", price: 1500, singlePrice: 2000, desc: "Audience targeting, ad creative set-up, budget pacing, monitoring and a results summary. Ad spend is not included." },
       },
       extras: {
         story:           { label: "Story design",               price: 500,  placeholder: true, desc: "Single story frame designed for Instagram / Facebook stories." },
@@ -83,19 +87,28 @@
       },
       platforms: {
         // `duties`: what we do on each platform, printed on the quote. Confirm wording with the team.
-        facebook:  { label: "Facebook",  duties: ["Posting and scheduling", "Captions and hashtags", "Comment replies", "Page info kept up to date"] },
-        instagram: { label: "Instagram", duties: ["Feed and reel posting", "Captions and hashtags", "Comment replies", "Profile grid kept consistent"] },
-        tiktok:    { label: "TikTok",    requiresVideo: true, duties: ["Video posting adapted for TikTok", "Trending sounds and hashtags", "Comment replies"] },
+        facebook:  { label: "Facebook",  duties: ["Posting and scheduling", "Captions and hashtags", "Page info kept up to date"] },
+        instagram: { label: "Instagram", duties: ["Feed and reel posting", "Captions and hashtags", "Profile grid kept consistent"] },
+        tiktok:    { label: "TikTok",    requiresVideo: true, duties: ["Video posting adapted for TikTok", "Trending sounds and hashtags"] },
         youtube:   { label: "YouTube",   requiresVideo: true, duties: ["Shorts and video uploads", "Titles, descriptions and tags", "Comment moderation"] },
-        linkedin:  { label: "LinkedIn",  duties: ["Company page posting", "Professional copy and hashtags", "Comment replies"] },
+        linkedin:  { label: "LinkedIn",  duties: ["Company page posting", "Professional copy and hashtags"] },
       },
-      managementTiers: [
-        { maxPieces: 6,        feePerPlatform: 1500 },
-        { maxPieces: 12,       feePerPlatform: 4250 },
-        { maxPieces: 18,       feePerPlatform: 6500 },
-        { maxPieces: Infinity, feePerPlatform: 9000 },
-      ],
-      roundTo: 1000,
+      // Management fee per platform. Depends on the post type, not on how many pieces:
+      // normal posts = standard, any posts in 2 sizes = dualSize. Adding content never changes it.
+      // Monthly = package prices (client pays every month), any quantity. One-off = singlePrice (package + Rs 500).
+      // packageMinPosts / packageMinVideos = what the base management fee covers.
+      packageMinPosts: 4,
+      packageMinVideos: 2,
+      // Add-on on top of management, per platform per month.
+      inbox: { label: "Inbox & comment replies", price: 1000, singlePrice: 1500,
+               desc: "Reply to messages and comments within 24 hours (Mon–Sat) using client-approved answers. Sales leads and complaints passed to the client. Weekly summary." },
+      management: {
+        base: 500,          // per platform, covers up to 4 posts + 2 videos
+        singleExtra: 500,   // added to the base for single-price quotes (starts at Rs 1,000)
+        stepPieces: 2,      // every 2 extra posts/videos above 4 + 2 ...
+        stepAmount: 125,    // ... adds this per platform
+        maxExtra: 500,      // cap above base; posts in 2 sizes go straight to the cap
+      },
       prepayDiscounts: [
         { months: 1, pct: 0 },
         { months: 3, pct: 5 },
@@ -103,8 +116,6 @@
       ],
       upsellThresholdPct: 10,
 
-      // One-off campaigns: same management fee as monthly, plus this premium (no commitment, no recurring work).
-      oneOffPremiumPct: 20,
 
       // Printed quote. Confirm these with the team before sending to clients.
       quote: {
@@ -118,14 +129,8 @@
     };
 
     const PRESETS = [
-      { name:"Essential", platforms:["facebook","instagram"], posts:4, reels:2, ads:2 },
-      { name:"Essential Plus", platforms:["facebook","instagram"], posts:5, reels:3, ads:2 },
-      { name:"Growth", platforms:["facebook","instagram","tiktok"], posts:6, reels:3, ads:2 },
-      { name:"Premium", platforms:["facebook","instagram","tiktok"], posts:6, reels:4, ads:4 },
-      { name:"Premium Plus", platforms:["facebook","instagram","tiktok"], posts:10, reels:5, ads:4 },
-      { name:"Pro", platforms:["facebook","instagram","tiktok","youtube"], posts:10, reels:5, ads:4 },
-      { name:"Elite", platforms:["facebook","instagram","tiktok","youtube"], posts:12, reels:6, ads:5 },
-      { name:"Ultimate", platforms:["facebook","instagram","tiktok","youtube"], posts:15, reels:6, ads:6 },
+      { name:"Essential", platforms:["facebook","instagram"], posts:4, postsDual:0, reels:2, ads:2, inbox:false },
+      { name:"Premium", platforms:["facebook","instagram","tiktok","linkedin"], posts:6, postsDual:0, reels:4, ads:6, inbox:true },
     ];
     const ICONS = {
       facebook:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M14 8h3V4h-3c-3.3 0-5 1.7-5 5v3H6v4h3v8h4v-8h3l1-4h-4V9c0-.7.3-1 1-1Z"/></svg>',
@@ -134,9 +139,9 @@
       youtube:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22 7.1a2.9 2.9 0 0 0-2-2C18.2 4.5 12 4.5 12 4.5s-6.2 0-8 .6a2.9 2.9 0 0 0-2 2A30 30 0 0 0 1.5 12 30 30 0 0 0 2 16.9a2.9 2.9 0 0 0 2 2c1.8.6 8 .6 8 .6s6.2 0 8-.6a2.9 2.9 0 0 0 2-2 30 30 0 0 0 .5-4.9 30 30 0 0 0-.5-4.9ZM10 15.5v-7l6 3.5-6 3.5Z"/></svg>',
       linkedin:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 3.5A2.5 2.5 0 1 1 5 8a2.5 2.5 0 0 1 0-4.5ZM3 9h4v12H3V9Zm6 0h3.8v1.6h.1A4.2 4.2 0 0 1 16.7 9c4 0 4.8 2.5 4.8 5.8V21h-4v-5.5c0-1.3 0-3-1.8-3s-2.1 1.4-2.1 2.9V21H9V9Z"/></svg>'
     };
-    const LIMITS = { posts:[0,50], reels:[0,50], carousels:[0,50], stories:[0,50], ads:[0,10], youtubeLong:[0,50], eventCoverage:[0,50], adBudget:[0,10000000] };
-    const LABELS = { posts:'Static posts', reels:'Reels / short videos', carousels:'Carousels', stories:'Stories', ads:'Ad campaigns', youtubeLong:'YouTube long videos', eventCoverage:'Event coverage' };
-    const DEFAULT_STATE = () => ({ mode:'monthly', platforms:{facebook:false,instagram:false,tiktok:false,youtube:false,linkedin:false}, posts:0, reels:0, carousels:0, stories:0, ads:0, youtubeLong:0, eventCoverage:0, adBudget:0, prepayMonths:1, clientName:'', basedOn:null });
+    const LIMITS = { posts:[0,50], postsDual:[0,50], reels:[0,50], aiVideos:[0,50], carousels:[0,50], stories:[0,50], ads:[0,10], youtubeLong:[0,50], eventCoverage:[0,50], adBudget:[0,10000000] };
+    const LABELS = { posts:'Static posts', postsDual:'Posts in 2 sizes', reels:'Reels / short videos', aiVideos:'AI videos', carousels:'Carousels', stories:'Stories', ads:'Ad campaigns', youtubeLong:'YouTube long videos', eventCoverage:'Event coverage' };
+    const DEFAULT_STATE = () => ({ mode:'monthly', manage:true, inbox:false, platforms:{facebook:false,instagram:false,tiktok:false,youtube:false,linkedin:false}, posts:0, postsDual:0, reels:0, aiVideos:0, carousels:0, stories:0, ads:0, youtubeLong:0, eventCoverage:0, adBudget:0, prepayMonths:1, clientName:'', basedOn:null });
     const money = n => `${CONFIG.currency} ${Math.round(n).toLocaleString('en-US')}`;
     const clamp = (value, min, max) => { const n = Number(value); return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : 0; };
     const roundHalfUp = (value, unit) => Math.floor((value + Math.floor(unit / 2)) / unit) * unit;
@@ -146,39 +151,49 @@
     function calculate(input) {
       const state = normalizedState(input);
       const selected = Object.keys(CONFIG.platforms).filter(key => state.platforms[key]);
-      const contentCost = state.posts * CONFIG.content.staticPost.price + state.reels * CONFIG.content.reel.price + state.carousels * CONFIG.extras.carousel.price + state.stories * CONFIG.extras.story.price + state.youtubeLong * CONFIG.extras.youtubeLong.price;
-      const adCost = state.ads * CONFIG.content.adCampaign.price;
+      // Package prices when the quote covers at least one full package (extras on top stay at package price); single prices otherwise.
+      const postCount = state.posts + state.postsDual, videoCount = state.reels + state.aiVideos;
+      const inPackage = state.mode === 'monthly';
+      const extraPieces = Math.max(0, postCount - CONFIG.packageMinPosts) + Math.max(0, videoCount - CONFIG.packageMinVideos);
+      const rate = key => { const item = CONFIG.content[key]; return inPackage ? item.price : (item.singlePrice || item.price); };
+      const contentCost = state.posts * rate('staticPost') + state.postsDual * rate('dualPost') + state.reels * rate('reel') + state.aiVideos * rate('aiVideo') + state.carousels * CONFIG.extras.carousel.price + state.stories * CONFIG.extras.story.price + state.youtubeLong * CONFIG.extras.youtubeLong.price;
+      const adCost = state.ads * rate('adCampaign');
       const extrasCost = state.eventCoverage * CONFIG.extras.eventCoverage.price;
-      const pieces = state.posts + state.reels + state.carousels + state.youtubeLong;
-      const tier = CONFIG.managementTiers.find(item => pieces <= item.maxPieces) || CONFIG.managementTiers.at(-1);
+      const pieces = state.posts + state.postsDual + state.reels + state.aiVideos + state.carousels + state.youtubeLong;
       const monthly = state.mode === 'monthly';
-      const feePerPlatform = selected.length ? tier.feePerPlatform : 0;
+      const M = CONFIG.management;
+      const mgmtStep = state.postsDual > 0 ? M.maxExtra : Math.min(M.maxExtra, Math.floor(extraPieces / M.stepPieces) * M.stepAmount);
+      const feePerPlatform = state.manage && selected.length ? M.base + (inPackage ? 0 : M.singleExtra) + mgmtStep : 0;
       const mgmtFee = feePerPlatform * selected.length;
-      const subtotal = contentCost + adCost + extrasCost + mgmtFee;
-      const premium = monthly ? 0 : Math.round(subtotal * CONFIG.oneOffPremiumPct / 100);
-      const total = selected.length ? roundHalfUp(subtotal + premium, CONFIG.roundTo) : 0;
-      const rounding = selected.length ? total - subtotal - premium : 0;
+      const inboxPerPlatform = state.manage && state.inbox && selected.length ? (inPackage ? CONFIG.inbox.price : CONFIG.inbox.singlePrice) : 0;
+      const inboxFee = inboxPerPlatform * selected.length;
+      const subtotal = contentCost + adCost + extrasCost + mgmtFee + inboxFee;
+      const premium = 0; // one-off uses single prices instead of a % premium
+      const total = state.manage && !selected.length ? 0 : subtotal + premium; // no rounding
+      const rounding = 0;
       const discount = CONFIG.prepayDiscounts.find(item => item.months === state.prepayMonths) || CONFIG.prepayDiscounts[0];
-      const discounted = monthly ? Math.floor((total * (100 - discount.pct) + 5000) / 10000) * 100 : total;
+      const discounted = monthly ? Math.round(total * (100 - discount.pct) / 100) : total;
       const lines = [];
-      if (state.posts) lines.push(line('Static posts', state.posts, CONFIG.content.staticPost.price, state.posts * CONFIG.content.staticPost.price));
-      if (state.reels) lines.push(line('Reels / short videos', state.reels, CONFIG.content.reel.price, state.reels * CONFIG.content.reel.price));
+      if (state.posts) lines.push(line('Static posts', state.posts, rate('staticPost'), state.posts * rate('staticPost')));
+      if (state.postsDual) lines.push(line('Posts in 2 sizes', state.postsDual, rate('dualPost'), state.postsDual * rate('dualPost')));
+      if (state.reels) lines.push(line('Reels / short videos', state.reels, rate('reel'), state.reels * rate('reel')));
+      if (state.aiVideos) lines.push(line('AI videos', state.aiVideos, rate('aiVideo'), state.aiVideos * rate('aiVideo')));
       if (state.carousels) lines.push(line('Carousel posts', state.carousels, CONFIG.extras.carousel.price, state.carousels * CONFIG.extras.carousel.price));
       if (state.stories) lines.push(line('Story designs', state.stories, CONFIG.extras.story.price, state.stories * CONFIG.extras.story.price));
       if (state.youtubeLong) lines.push(line('YouTube long videos', state.youtubeLong, CONFIG.extras.youtubeLong.price, state.youtubeLong * CONFIG.extras.youtubeLong.price));
-      if (state.ads) lines.push(line('Ad campaign setup', state.ads, CONFIG.content.adCampaign.price, adCost));
+      if (state.ads) lines.push(line('Ad campaign setup', state.ads, rate('adCampaign'), adCost));
       if (state.eventCoverage) lines.push(line('Event coverage', state.eventCoverage, CONFIG.extras.eventCoverage.price, extrasCost));
-      if (selected.length) lines.push(line(monthly ? 'Platform management' : 'Campaign management', selected.length, feePerPlatform, mgmtFee));
-      if (premium) lines.push({...line(`One-off premium (${CONFIG.oneOffPremiumPct}%)`, 1, premium, premium), note:`${CONFIG.oneOffPremiumPct}% of ${money(subtotal)}`});
+      if (mgmtFee) lines.push(line(monthly ? 'Platform management' : 'Campaign management', selected.length, feePerPlatform, mgmtFee));
+      if (inboxFee) lines.push(line('Inbox & comment replies', selected.length, inboxPerPlatform, inboxFee));
       const warnings = [];
-      if (!selected.length) warnings.push('Select at least one platform.');
+      if (state.manage && !selected.length) warnings.push('Select at least one platform, or untick "We manage these platforms" for a content-only quote.');
       if (!pieces) warnings.push('Add at least one post or video.');
-      if (selected.some(key => CONFIG.platforms[key].requiresVideo) && state.reels + state.youtubeLong === 0) warnings.push('TikTok/YouTube need video content. Add at least 1 reel.');
-      if (state.ads > state.posts + state.reels + state.carousels + state.youtubeLong) warnings.push('More ad campaigns than content pieces. Each campaign needs a creative.');
-      if (selected.length && [6,12,18].includes(pieces)) { const next = {...state, posts:state.posts + 1}; const nextResult = calculate({...next, prepayMonths:1}); warnings.push(`Tier limit: one more piece moves management to the next tier (+${money(nextResult.total - total)}).`); }
+      if (selected.some(key => CONFIG.platforms[key].requiresVideo) && state.reels + state.aiVideos + state.youtubeLong === 0) warnings.push('TikTok/YouTube need video content. Add at least 1 reel.');
+      if (state.ads > state.posts + state.postsDual + state.reels + state.aiVideos + state.carousels + state.youtubeLong) warnings.push('More ad campaigns than content pieces. Each campaign needs a creative.');
       if ((state.stories && CONFIG.extras.story.placeholder) || (state.carousels && CONFIG.extras.carousel.placeholder) || (state.youtubeLong && CONFIG.extras.youtubeLong.placeholder) || (state.eventCoverage && CONFIG.extras.eventCoverage.placeholder)) warnings.push('Includes placeholder rates. Confirm before sending.');
-      const result = {lines, subtotal, premium, rounding, total, discounted, pieces, feePerPlatform, mgmtFee, warnings, upsell:null};
-      if (monthly && selected.length && !state._skipUpsell) result.upsell = findUpsell(state, result);
+      if (!inPackage && (postCount || videoCount || state.ads)) warnings.push('One-off campaign: everything is charged at single-item prices.');
+      const result = {inPackage, extraPieces, inboxPerPlatform, lines, subtotal, premium, rounding, total, discounted, pieces, feePerPlatform, mgmtFee, warnings, upsell:null};
+      if (monthly && state.manage && selected.length && !state._skipUpsell) result.upsell = findUpsell(state, result);
       return result;
     }
 
@@ -186,9 +201,9 @@
       const candidates = PRESETS.map((preset, index) => {
         const customPlatforms = Object.keys(state.platforms).filter(key => state.platforms[key]);
         if (!customPlatforms.filter(key => key !== 'linkedin').every(key => preset.platforms.includes(key))) return null;
-        if (preset.posts < state.posts || preset.reels < state.reels || preset.ads < state.ads) return null;
+        if (preset.posts + preset.postsDual < state.posts + state.postsDual || preset.reels < state.reels || preset.ads < state.ads) return null;
         if (presetMatches(preset, state)) return null;
-        const presetState = {...state, _skipUpsell:true, platforms:Object.fromEntries(Object.keys(CONFIG.platforms).map(key => [key, preset.platforms.includes(key) || (key === 'linkedin' && state.platforms.linkedin)])), posts:preset.posts, reels:preset.reels, ads:preset.ads, basedOn:preset.name, prepayMonths:1};
+        const presetState = {...state, _skipUpsell:true, platforms:Object.fromEntries(Object.keys(CONFIG.platforms).map(key => [key, preset.platforms.includes(key) || (key === 'linkedin' && state.platforms.linkedin)])), posts:preset.posts, postsDual:preset.postsDual, reels:preset.reels, ads:preset.ads, inbox:!!preset.inbox || !!state.inbox, basedOn:preset.name, prepayMonths:1};
         const presetResult = calculate(presetState);
         if (presetResult.pieces < result.pieces || presetResult.total > result.total * (100 + CONFIG.upsellThresholdPct) / 100) return null;
         return {index, preset, presetResult};
@@ -197,18 +212,19 @@
       const chosen = candidates[0];
       const delta = chosen.presetResult.total - result.total;
       const extras = [];
-      if (chosen.preset.posts > state.posts) extras.push(`+${chosen.preset.posts - state.posts} post${chosen.preset.posts - state.posts > 1 ? 's':''}`);
+      const morePosts = chosen.preset.posts + chosen.preset.postsDual - state.posts - state.postsDual; if (morePosts > 0) extras.push(`+${morePosts} post${morePosts > 1 ? 's':''}`); if (chosen.preset.postsDual > state.postsDual) extras.push('posts in 2 sizes');
       if (chosen.preset.reels > state.reels) extras.push(`+${chosen.preset.reels - state.reels} reel${chosen.preset.reels - state.reels > 1 ? 's':''}`);
       if (chosen.preset.ads > state.ads) extras.push(`+${chosen.preset.ads - state.ads} ad campaign${chosen.preset.ads - state.ads > 1 ? 's':''}`);
       return {name:chosen.preset.name, total:chosen.presetResult.total, delta, extras, presetIndex:chosen.index};
     }
     function selectedPlatformAllowed(key, platforms) { return !platforms[key] || key === 'linkedin'; }
     // Exact package match on core platforms (LinkedIn ignored) + posts, reels, ads.
-    function presetMatches(preset, s) { const core = Object.keys(CONFIG.platforms).filter(key => key !== 'linkedin'); return core.every(key => !!(s.platforms || {})[key] === preset.platforms.includes(key)) && preset.posts === Number(s.posts || 0) && preset.reels === Number(s.reels || 0) && preset.ads === Number(s.ads || 0); }
+    function presetMatches(preset, s) { if (s.manage === false || !!s.inbox !== !!preset.inbox) return false; const core = Object.keys(CONFIG.platforms).filter(key => key !== 'linkedin' || preset.platforms.includes('linkedin')); return core.every(key => !!(s.platforms || {})[key] === preset.platforms.includes(key)) && preset.posts === Number(s.posts || 0) && preset.postsDual === Number(s.postsDual || 0) && preset.reels === Number(s.reels || 0) && preset.ads === Number(s.ads || 0); }
     function matchPreset(s) { return PRESETS.findIndex(preset => presetMatches(preset, s)); }
     function planLabel(s) {
+      if (s.manage === false) return 'Content only';
       const index = matchPreset(s);
-      if (index >= 0) { const addOns = []; if (s.platforms.linkedin) addOns.push('LinkedIn'); if (s.carousels || s.stories || s.youtubeLong || s.eventCoverage) addOns.push('extras'); return `${PRESETS[index].name}${addOns.length ? ` + ${addOns.join(' + ')}` : ''}`; }
+      if (index >= 0) { const addOns = []; if (s.platforms.linkedin && !PRESETS[index].platforms.includes('linkedin')) addOns.push('LinkedIn'); if (s.inbox && !PRESETS[index].inbox) addOns.push('inbox replies'); if (s.aiVideos || s.carousels || s.stories || s.youtubeLong || s.eventCoverage) addOns.push('extras'); return `${PRESETS[index].name}${addOns.length ? ` + ${addOns.join(' + ')}` : ''}`; }
       return s.basedOn ? `Custom (based on ${s.basedOn})` : 'Custom';
     }
 
@@ -217,7 +233,7 @@
     const $ = id => document.getElementById(id);
     const el = (tag, text, className) => { const node = document.createElement(tag); if (text !== undefined) node.textContent = text; if (className) node.className = className; return node; };
     const TICK = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6.2 5 8.6l4.5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    const RATES = { posts:CONFIG.content.staticPost, reels:CONFIG.content.reel, ads:CONFIG.content.adCampaign, carousels:CONFIG.extras.carousel, stories:CONFIG.extras.story, youtubeLong:CONFIG.extras.youtubeLong, eventCoverage:CONFIG.extras.eventCoverage };
+    const RATES = { posts:CONFIG.content.staticPost, postsDual:CONFIG.content.dualPost, reels:CONFIG.content.reel, aiVideos:CONFIG.content.aiVideo, ads:CONFIG.content.adCampaign, carousels:CONFIG.extras.carousel, stories:CONFIG.extras.story, youtubeLong:CONFIG.extras.youtubeLong, eventCoverage:CONFIG.extras.eventCoverage };
     let shownTotal = 0, totalFrame = null;
     function animateTotal(target) {
       const node = $('quoteTotal'); cancelAnimationFrame(totalFrame);
@@ -243,7 +259,7 @@
       $('budgetOutput').replaceChildren(); if (state.adBudget > 0) { const box = el('div', undefined, 'budget'); box.append(el('strong','Ad budget (not included)'), el('span', `${money(state.adBudget)} paid by client directly to the platform`)); $('budgetOutput').append(box); }
       const warningBox = $('warnings'); warningBox.replaceChildren(); result.warnings.forEach(warning => warningBox.append(el('div', warning, 'warning')));
       $('upsellOutput').replaceChildren(); if (result.upsell) { const box = el('div', undefined, 'upsell'); const msg = result.upsell.delta <= 0 ? `${result.upsell.name} gives you more for the same price.` : `For ${money(result.upsell.delta)} more you get the ${result.upsell.name} package${result.upsell.extras.length ? `: ${result.upsell.extras.join(', ')}` : '.'}`; box.append(el('small','Better value'), el('strong', msg)); const button = el('button','Load package'); button.type='button'; button.addEventListener('click', () => applyPreset(result.upsell.presetIndex, true)); box.append(button); $('upsellOutput').append(box); }
-      $('included').hidden = state.mode !== 'monthly';
+      $('included').hidden = state.mode !== 'monthly' || !state.manage; $('manageToggle').checked = state.manage; $('inboxToggle').checked = !!state.inbox; $('inboxToggle').disabled = !state.manage; $('inboxToggle').closest('.toggle').style.opacity = state.manage ? '' : '.5'; document.getElementById('platforms').classList.toggle('content-only', !state.manage);
       $('prepayField').hidden = state.mode !== 'monthly';
     }
     function buildPrintView(result) {
@@ -276,17 +292,18 @@
       const table = el('table', undefined, 'pv-table'); const thead = el('thead'); const hr = el('tr');
       ['Item', 'Qty', 'Rate', 'Amount'].forEach((h, i) => hr.append(cell('th', h, i ? 'num' : ''))); thead.append(hr); table.append(thead);
       const tbody = el('tbody');
-      const descFor = label => { const all = {...CONFIG.content, ...CONFIG.extras}; const map = {'Static posts':'staticPost','Reels / short videos':'reel','Carousel posts':'carousel','Story designs':'story','YouTube long videos':'youtubeLong','Ad campaign setup':'adCampaign','Event coverage':'eventCoverage'}; const item = all[map[label]]; return item ? `${item.desc || ''}${item.placeholder ? ' (Rate to be confirmed.)' : ''}` : ''; };
+      const descFor = label => { const all = {...CONFIG.content, ...CONFIG.extras}; const map = {'Static posts':'staticPost','Posts in 2 sizes':'dualPost','Reels / short videos':'reel','AI videos':'aiVideo','Carousel posts':'carousel','Story designs':'story','YouTube long videos':'youtubeLong','Ad campaign setup':'adCampaign','Event coverage':'eventCoverage'}; const item = all[map[label]]; return item ? `${item.desc || ''}${item.placeholder ? ' (Rate to be confirmed.)' : ''}` : ''; };
       result.lines.forEach(item => {
         const tr = el('tr'); const name = el('td'); name.append(el('strong', item.label));
         let desc = descFor(item.label);
-        if (/management/i.test(item.label)) desc = `${item.quantity} platform${item.quantity > 1 ? 's' : ''} × ${money(item.rate)}. Rate set by monthly volume (${result.pieces} pieces). See breakdown below.`;
+        if (/management/i.test(item.label)) desc = `${item.quantity} platform${item.quantity > 1 ? 's' : ''} × ${money(item.rate)}. ${state.postsDual > 0 ? 'Top rate because posts are made in 2 sizes.' : result.extraPieces >= CONFIG.management.stepPieces ? `Includes +${money(Math.min(CONFIG.management.maxExtra, Math.floor(result.extraPieces / CONFIG.management.stepPieces) * CONFIG.management.stepAmount))} for ${result.extraPieces} pieces above ${CONFIG.packageMinPosts} posts + ${CONFIG.packageMinVideos} videos.` : 'Base rate.'}${result.inPackage ? '' : ' One-off rate.'} See breakdown below.`;
+        if (item.label === 'Inbox & comment replies') desc = CONFIG.inbox.desc;
         if (item.note) desc = `${item.note}. Covers short-term planning and coordination with no ongoing commitment.`;
         if (desc) name.append(el('div', desc, 'pv-desc'));
         tr.append(name, cell('td', item.note ? '—' : String(item.quantity), 'num'), cell('td', item.note ? '—' : money(item.rate), 'num'), cell('td', money(item.amount), 'num'));
         tbody.append(tr);
       });
-      if (result.rounding) { const tr = el('tr', undefined, 'pv-muted'); tr.append(cell('td', `Rounding to the nearest ${money(CONFIG.roundTo)}`), cell('td', ''), cell('td', ''), cell('td', `${result.rounding > 0 ? '+' : ''}${money(result.rounding)}`, 'num')); tbody.append(tr); }
+      if (result.rounding) { const tr = el('tr', undefined, 'pv-muted'); tr.append(cell('td', 'Rounding'), cell('td', ''), cell('td', ''), cell('td', `${result.rounding > 0 ? '+' : ''}${money(result.rounding)}`, 'num')); tbody.append(tr); }
       table.append(tbody);
       const tfoot = el('tfoot'); const fr = el('tr'); fr.append(cell('td', 'Total'), cell('td', ''), cell('td', ''), cell('td', `${money(result.total)}${per}`, 'num')); tfoot.append(fr); table.append(tfoot);
       charges.append(table);
@@ -294,18 +311,18 @@
       if (state.adBudget > 0) charges.append(el('p', `Suggested ad budget: ${money(state.adBudget)}, paid by the client directly to the platform. Not included in the total above.`, 'pv-callout pv-callout-alt'));
 
       // Per platform
-      if (selected.length) {
+      if (state.manage && selected.length) {
         const plat = section('What we do on each platform', `Content is created once and adapted for every platform below. Management is charged per platform because each one is posted, monitored and replied to separately.`);
         const grid = el('div', undefined, 'pv-platforms');
-        const videoCount = state.reels + state.youtubeLong;
+        const videoCount = state.reels + state.aiVideos + state.youtubeLong;
         selected.forEach(key => {
           const p = CONFIG.platforms[key]; const card = el('div', undefined, 'pv-plat');
-          const top = el('div', undefined, 'pv-plat-top'); top.append(el('strong', p.label), el('span', `${money(result.feePerPlatform)}${per}`)); card.append(top);
+          const top = el('div', undefined, 'pv-plat-top'); top.append(el('strong', p.label), el('span', `${money(result.feePerPlatform + result.inboxPerPlatform)}${per}`)); card.append(top);
           const parts = [];
-          if (p.requiresVideo) { if (state.reels) parts.push(`${state.reels} ${key === 'youtube' ? 'Shorts' : 'videos'}`); if (key === 'youtube' && state.youtubeLong) parts.push(`${state.youtubeLong} long video${state.youtubeLong > 1 ? 's' : ''}`); }
-          else { if (state.posts) parts.push(`${state.posts} post${state.posts > 1 ? 's' : ''}`); if (state.reels) parts.push(`${state.reels} reel${state.reels > 1 ? 's' : ''}`); if (state.carousels) parts.push(`${state.carousels} carousel${state.carousels > 1 ? 's' : ''}`); if (state.stories && key !== 'linkedin') parts.push(`${state.stories} stor${state.stories > 1 ? 'ies' : 'y'}`); }
+          if (p.requiresVideo) { if (state.reels) parts.push(`${state.reels} ${key === 'youtube' ? 'Shorts' : 'videos'}`); if (state.aiVideos) parts.push(`${state.aiVideos} AI video${state.aiVideos > 1 ? 's' : ''}`); if (key === 'youtube' && state.youtubeLong) parts.push(`${state.youtubeLong} long video${state.youtubeLong > 1 ? 's' : ''}`); }
+          else { if (state.posts) parts.push(`${state.posts} post${state.posts > 1 ? 's' : ''}`); if (state.postsDual) parts.push(`${state.postsDual} post${state.postsDual > 1 ? 's' : ''} (sized for this platform)`); if (state.reels) parts.push(`${state.reels} reel${state.reels > 1 ? 's' : ''}`); if (state.aiVideos) parts.push(`${state.aiVideos} AI video${state.aiVideos > 1 ? 's' : ''}`); if (state.carousels) parts.push(`${state.carousels} carousel${state.carousels > 1 ? 's' : ''}`); if (state.stories && key !== 'linkedin') parts.push(`${state.stories} stor${state.stories > 1 ? 'ies' : 'y'}`); }
           card.append(el('div', parts.length ? `Content${monthly ? ' per month' : ''}: ${parts.join(', ')}` : (p.requiresVideo && !videoCount ? 'Needs video content' : 'No content selected'), 'pv-plat-content'));
-          const ul = el('ul'); (p.duties || []).forEach(d => ul.append(el('li', d))); card.append(ul);
+          const ul = el('ul'); (p.duties || []).forEach(d => ul.append(el('li', d))); if (state.inbox) ul.append(el('li', 'Inbox and comment replies within 24 hours')); card.append(ul);
           grid.append(card);
         });
         plat.append(grid);
@@ -316,17 +333,20 @@
       const steps = el('ol', undefined, 'pv-steps');
       steps.append(el('li', 'Content: each post, reel or extra is charged once at the rates above, however many platforms it goes to.'));
       if (state.ads) steps.append(el('li', `Ad campaigns: ${money(CONFIG.content.adCampaign.price)} per campaign covers set-up and management. The ad budget itself is separate.`));
-      steps.append(el('li', `Platform management: a fee per platform, based on how many pieces we publish ${monthly ? 'each month' : 'in the campaign'}. More content means more posting, monitoring and replies.`));
-      if (!monthly) steps.append(el('li', `One-off premium: ${CONFIG.oneOffPremiumPct}% on top, because one-off campaigns need set-up and planning without a monthly commitment.`));
-      steps.append(el('li', `The total is rounded to the nearest ${money(CONFIG.roundTo)}.`));
+      if (state.manage) steps.append(el('li', `Platform management: from ${money(CONFIG.management.base)} per platform for up to ${CONFIG.packageMinPosts} posts + ${CONFIG.packageMinVideos} videos, plus ${money(CONFIG.management.stepAmount)} for every ${CONFIG.management.stepPieces} extra posts or videos, up to ${money(CONFIG.management.base + CONFIG.management.maxExtra)}. Posts in 2 sizes use the top rate. One-off campaigns add ${money(CONFIG.management.singleExtra)}.`));
+      if (!monthly) steps.append(el('li', 'One-off campaign: charged at single-item prices, because there is no monthly commitment.'));
       how.append(steps);
-      const tiers = el('table', undefined, 'pv-table pv-tiers'); const th = el('tr'); ['Pieces per ' + (monthly ? 'month' : 'campaign'), 'Fee per platform'].forEach((h, i) => th.append(cell('th', h, i ? 'num' : ''))); const tt = el('thead'); tt.append(th); tiers.append(tt);
-      const tb = el('tbody'); let prev = 0;
-      CONFIG.managementTiers.forEach(tier => { const range = tier.maxPieces === Infinity ? `${prev + 1} or more` : `${prev ? prev + 1 : 1}–${tier.maxPieces}`; const current = result.pieces > prev && result.pieces <= tier.maxPieces; const tr = el('tr', undefined, current ? 'pv-current' : ''); tr.append(cell('td', current ? `${range}  ← your plan (${result.pieces})` : range), cell('td', money(tier.feePerPlatform), 'num')); tb.append(tr); prev = tier.maxPieces; });
+      if (state.manage) {
+      const tiers = el('table', undefined, 'pv-table pv-tiers'); const th = el('tr'); ['Content per month', `Per platform${result.inPackage ? '' : ' (one-off)'}`].forEach((h, i) => th.append(cell('th', h, i ? 'num' : ''))); const tt = el('thead'); tt.append(th); tiers.append(tt);
+      const tb = el('tbody');
+      const M2 = CONFIG.management, add = result.inPackage ? 0 : M2.singleExtra, steps2 = M2.maxExtra / M2.stepAmount;
+      const curStep = state.postsDual > 0 ? steps2 : Math.min(steps2, Math.floor(result.extraPieces / M2.stepPieces));
+      for (let i = 0; i <= steps2; i++) { const label = i === 0 ? `Up to ${CONFIG.packageMinPosts} posts + ${CONFIG.packageMinVideos} videos` : i === steps2 ? `${i * M2.stepPieces}+ extra pieces, or posts in 2 sizes` : `${i * M2.stepPieces}–${i * M2.stepPieces + M2.stepPieces - 1} extra pieces`; const current = i === curStep; const tr = el('tr', undefined, current ? 'pv-current' : ''); tr.append(cell('td', current ? `${label}  ← your plan` : label), cell('td', money(M2.base + add + i * M2.stepAmount), 'num')); tb.append(tr); }
       tiers.append(tb); how.append(tiers);
+      }
 
       // Included + notes
-      if (monthly) { const inc = section('Included in every monthly plan'); const ul = el('ul', undefined, 'pv-included'); ['Caption creation', 'Hashtag research', 'Profile management', 'Monthly performance report'].forEach(t => ul.append(el('li', t))); inc.append(ul); }
+      if (monthly && state.manage) { const inc = section('Included in every monthly plan'); const ul = el('ul', undefined, 'pv-included'); ['Caption creation', 'Hashtag research', 'Profile management', 'Monthly performance report'].forEach(t => ul.append(el('li', t))); inc.append(ul); }
       const notes = section('Notes'); const nl = el('ul', undefined, 'pv-notes');
       [`This quote is valid until ${fmtDate(validUntil)}.`, ...CONFIG.quote.notes, ...(result.warnings.some(w => w.includes('placeholder')) ? ['Some rates marked "to be confirmed" may change before work starts.'] : [])].forEach(t => nl.append(el('li', t)));
       notes.append(nl);
@@ -334,22 +354,38 @@
       const foot = el('div', undefined, 'pv-foot'); foot.append(el('strong', 'CloudyCode'), el('span', 'info@cloudycode.net · +94 76 635 1053 · WhatsApp +94 76 635 1053')); view.append(foot);
       return view;
     }
-    function renderPresetButtons() { const wrap = $('presets'); wrap.replaceChildren(); PRESETS.forEach((preset,index) => { const button = el('button', undefined, 'preset'); button.type='button'; const price = calculate({...state, ...presetState(preset), linkedin:false}).total; const meta = `${preset.platforms.length} platforms · ${preset.posts}P ${preset.reels}R · ${preset.ads} ads`; button.append(el('span',preset.name,'p-name'), el('span',money(price),'p-price num'), el('span',meta,'p-meta')); if (preset.name === 'Premium') button.append(el('span','Most popular','p-tag')); const check = el('span',undefined,'p-check'); check.innerHTML = TICK; button.append(check); button.setAttribute('aria-label', `${preset.name} package, ${money(price)}, ${meta}`); button.addEventListener('click', () => applyPreset(index)); wrap.append(button); }); }
-    function presetState(preset) { return {platforms:Object.fromEntries(Object.keys(CONFIG.platforms).map(key => [key,preset.platforms.includes(key)])),posts:preset.posts,reels:preset.reels,ads:preset.ads,carousels:0,stories:0,youtubeLong:0,eventCoverage:0}; }
-    function applyPreset(index, keepExtras) { const preset = PRESETS[index]; const extras = keepExtras ? {carousels:state.carousels,stories:state.stories,youtubeLong:state.youtubeLong,eventCoverage:state.eventCoverage,adBudget:state.adBudget} : {}; state = {...state, ...presetState(preset), ...extras, basedOn:preset.name}; syncInputs(); update(); }
-    function makeStepper(key, max) { const row = el('div', undefined, 'step-row'); const label = el('label', LABELS[key]); label.htmlFor = `${key}Input`; const rate = RATES[key]; if (rate) { label.append(el('small', `${money(rate.price)} each`)); if (rate.placeholder) label.append(el('span','Placeholder rate','badge')); } const stepper = el('div', undefined, 'stepper'); const minus = el('button','−'); minus.type='button'; minus.setAttribute('aria-label',`Decrease ${LABELS[key]}`); const input = document.createElement('input'); input.id=`${key}Input`; input.type='number'; input.min='0'; input.max=String(max); input.value='0'; input.setAttribute('aria-label',LABELS[key]); const plus = el('button','+'); plus.type='button'; plus.setAttribute('aria-label',`Increase ${LABELS[key]}`); const change = value => { state[key] = clamp(value,0,max); input.value=String(state[key]); state.basedOn=null; update(); }; minus.addEventListener('click', () => change(state[key]-1)); plus.addEventListener('click', () => change(state[key]+1)); input.addEventListener('input', () => change(input.value)); stepper.append(minus,input,plus); row.append(label,stepper); return row; }
-    function buildInputs() { Object.entries({posts:50,reels:50,carousels:50,stories:50}).forEach(([key,max]) => $('contentFields').append(makeStepper(key,max))); Object.entries({ads:10,youtubeLong:50,eventCoverage:50}).forEach(([key,max]) => $('extraFields').append(makeStepper(key,max))); Object.entries(CONFIG.platforms).forEach(([key,platform]) => { const label = el('label',undefined,'check'); label.dataset.platform = key; const input = document.createElement('input'); input.type='checkbox'; input.id=`platform-${key}`; input.addEventListener('change', () => { state.platforms[key]=input.checked; state.basedOn=null; update(); }); label.htmlFor=input.id; label.append(input); const icon = document.createElement('span'); icon.className='icon'; icon.append(document.createRange().createContextualFragment(ICONS[key])); const tick = el('span',undefined,'tick'); tick.innerHTML = TICK; label.append(icon,el('span',platform.label),tick); $('platforms').append(label); }); }
+    function renderPresetButtons() { const wrap = $('presets'); wrap.replaceChildren(); PRESETS.forEach((preset,index) => { const button = el('button', undefined, 'preset'); button.type='button'; const price = calculate({...state, ...presetState(preset), linkedin:false}).total; const meta = `${preset.platforms.length} platforms · ${preset.posts ? preset.posts + ' posts' : preset.postsDual + ' posts (2 sizes)'} · ${preset.reels} reels · ${preset.ads} ads${preset.inbox ? ' · inbox replies' : ''}`; button.append(el('span',preset.name,'p-name'), el('span',money(price),'p-price num'), el('span',meta,'p-meta')); if (preset.name === 'Premium') button.append(el('span','Most popular','p-tag')); const check = el('span',undefined,'p-check'); check.innerHTML = TICK; button.append(check); button.setAttribute('aria-label', `${preset.name} package, ${money(price)}, ${meta}`); button.addEventListener('click', () => applyPreset(index)); wrap.append(button); }); }
+    function presetState(preset) { return {manage:true, inbox:!!preset.inbox, platforms:Object.fromEntries(Object.keys(CONFIG.platforms).map(key => [key,preset.platforms.includes(key)])),posts:preset.posts,postsDual:preset.postsDual,reels:preset.reels,ads:preset.ads,aiVideos:0,carousels:0,stories:0,youtubeLong:0,eventCoverage:0}; }
+    function applyPreset(index, keepExtras) { const preset = PRESETS[index]; const extras = keepExtras ? {aiVideos:state.aiVideos,carousels:state.carousels,stories:state.stories,youtubeLong:state.youtubeLong,eventCoverage:state.eventCoverage,adBudget:state.adBudget} : {}; state = {...state, ...presetState(preset), ...extras, basedOn:preset.name}; syncInputs(); update(); }
+    function makeStepper(key, max) { const row = el('div', undefined, 'step-row'); const label = el('label', LABELS[key]); label.htmlFor = `${key}Input`; const rate = RATES[key]; if (rate) { label.append(el('small', rate.singlePrice ? `${money(rate.price)} in a package · ${money(rate.singlePrice)} single` : `${money(rate.price)} each`)); if (rate.placeholder) label.append(el('span','Placeholder rate','badge')); } const stepper = el('div', undefined, 'stepper'); const minus = el('button','−'); minus.type='button'; minus.setAttribute('aria-label',`Decrease ${LABELS[key]}`); const input = document.createElement('input'); input.id=`${key}Input`; input.type='number'; input.min='0'; input.max=String(max); input.value='0'; input.setAttribute('aria-label',LABELS[key]); const plus = el('button','+'); plus.type='button'; plus.setAttribute('aria-label',`Increase ${LABELS[key]}`); const change = value => { state[key] = clamp(value,0,max); input.value=String(state[key]); state.basedOn=null; update(); }; minus.addEventListener('click', () => change(state[key]-1)); plus.addEventListener('click', () => change(state[key]+1)); input.addEventListener('input', () => change(input.value)); stepper.append(minus,input,plus); row.append(label,stepper); return row; }
+    function buildInputs() { Object.entries({posts:50,postsDual:50,reels:50,aiVideos:50,carousels:50,stories:50}).forEach(([key,max]) => $('contentFields').append(makeStepper(key,max))); Object.entries({ads:10,youtubeLong:50,eventCoverage:50}).forEach(([key,max]) => $('extraFields').append(makeStepper(key,max))); Object.entries(CONFIG.platforms).forEach(([key,platform]) => { const label = el('label',undefined,'check'); label.dataset.platform = key; const input = document.createElement('input'); input.type='checkbox'; input.id=`platform-${key}`; input.addEventListener('change', () => { state.platforms[key]=input.checked; state.basedOn=null; update(); }); label.htmlFor=input.id; label.append(input); const icon = document.createElement('span'); icon.className='icon'; icon.append(document.createRange().createContextualFragment(ICONS[key])); const tick = el('span',undefined,'tick'); tick.innerHTML = TICK; label.append(icon,el('span',platform.label),tick); $('platforms').append(label); }); }
     function syncInputs() { Object.keys(CONFIG.platforms).forEach(key => { const input=$(`platform-${key}`); if(input) input.checked=!!state.platforms[key]; }); Object.keys(LIMITS).forEach(key => { const input=$(`${key}Input`) || $(key === 'adBudget' ? 'adBudget' : ''); if(input) input.value=String(state[key]); }); $('adBudget').value=String(state.adBudget || ''); $('prepayMonths').value=String(state.prepayMonths); $('clientName').value=state.clientName; document.querySelectorAll('[data-mode]').forEach(button => button.classList.toggle('active',button.dataset.mode===state.mode)); }
     function update() { state = normalizedState(state); render(calculate(state)); renderPresetButtons(); const index = matchPreset(state); const chip = el('span', index >= 0 ? `✓ ${planLabel(state)}` : planLabel(state), `chip ${index >= 0 ? 'match' : 'custom'}`); $('basedLabel').replaceChildren(chip, el('span', index >= 0 ? 'Matches a standard package' : 'Change any number to customise')); document.querySelectorAll('.step-row').forEach(row => { const input = row.querySelector('input'); row.classList.toggle('on', Number(input.value) > 0); }); document.querySelectorAll('[data-mode]').forEach(button => { const on = button.dataset.mode === state.mode; button.classList.toggle('active', on); button.setAttribute('aria-pressed', String(on)); }); document.querySelectorAll('#presets .preset').forEach((button, i) => { button.classList.toggle('active', i === index); button.setAttribute('aria-pressed', String(i === index)); }); }
-    function copyQuote() { const platforms=Object.keys(CONFIG.platforms).filter(key=>state.platforms[key]).map(key=>CONFIG.platforms[key].label).join(', ') || 'None'; const parts=['CloudyCode – Social Media Quote',`Client: ${state.clientName || '—'}`,`Plan: ${planLabel(state)} ·${state.mode === 'monthly' ? 'Monthly' : 'One-off'}`,'',`Platforms: ${platforms}`]; lastResult.lines.forEach(item => parts.push(item.note ? `${item.label} ........ ${money(item.amount)}` : `${item.quantity} ${item.label.toLowerCase()} × ${money(item.rate)} ........ ${money(item.amount)}`)); if(lastResult.rounding) parts.push(`Rounding ${'.'.repeat(27)} ${money(lastResult.rounding)}`); parts.push(`TOTAL ${'.'.repeat(29)} ${money(lastResult.total)}${state.mode === 'monthly' ? ' / month' : ''}`); if(state.mode === 'monthly') parts.push('','Included: caption creation, hashtag research, profile management, monthly report'); if(state.adBudget>0) parts.push(`Ad budget (paid directly to the platform, not included): ${money(state.adBudget)}`); parts.push('','info@cloudycode.net · +94 76 635 1053'); navigator.clipboard?.writeText(parts.join('\n')).then(()=>{ $('copyButton').textContent='Copied ✓'; $('copyButton').classList.add('done'); setTimeout(()=>{$('copyButton').textContent='Copy quote as text'; $('copyButton').classList.remove('done');},1600); }); }
+    function copyQuote() { const platforms=Object.keys(CONFIG.platforms).filter(key=>state.platforms[key]).map(key=>CONFIG.platforms[key].label).join(', ') || 'None'; const parts=['CloudyCode – Social Media Quote',`Client: ${state.clientName || '—'}`,`Plan: ${planLabel(state)} ·${state.mode === 'monthly' ? 'Monthly' : 'One-off'}`,'',`Platforms: ${platforms}`]; lastResult.lines.forEach(item => parts.push(item.note ? `${item.label} ........ ${money(item.amount)}` : `${item.quantity} ${item.label.toLowerCase()} × ${money(item.rate)} ........ ${money(item.amount)}`)); if(lastResult.rounding) parts.push(`Rounding ${'.'.repeat(27)} ${money(lastResult.rounding)}`); parts.push(`TOTAL ${'.'.repeat(29)} ${money(lastResult.total)}${state.mode === 'monthly' ? ' / month' : ''}`); if(state.mode === 'monthly' && state.manage) parts.push('','Included: caption creation, hashtag research, profile management, monthly report'); if(state.adBudget>0) parts.push(`Ad budget (paid directly to the platform, not included): ${money(state.adBudget)}`); parts.push('','info@cloudycode.net · +94 76 635 1053'); navigator.clipboard?.writeText(parts.join('\n')).then(()=>{ $('copyButton').textContent='Copied ✓'; $('copyButton').classList.add('done'); setTimeout(()=>{$('copyButton').textContent='Copy quote as text'; $('copyButton').classList.remove('done');},1600); }); }
     function reset() { state=DEFAULT_STATE(); syncInputs(); update(); }
     function runTests() { const cases=[
-      ['T1', {...DEFAULT_STATE(),platforms:{facebook:true,instagram:true},posts:4,reels:2,ads:2}, 15000], ['T2',{...DEFAULT_STATE(),platforms:{facebook:true,instagram:true,tiktok:true},posts:6,reels:4,ads:4},35000], ['T3',{...DEFAULT_STATE(),platforms:{facebook:true,instagram:true,tiktok:true,youtube:true},posts:15,reels:6,ads:6},75000], ['T4',{...DEFAULT_STATE(),platforms:{facebook:true,instagram:true,youtube:true,linkedin:true},posts:6,ads:2},16000], ['T5',{...DEFAULT_STATE(),platforms:{facebook:true,instagram:true,tiktok:true,linkedin:true},posts:4,reels:2,ads:2},18000], ['T6',{...DEFAULT_STATE(),mode:'oneoff',platforms:{facebook:true,instagram:true},posts:3,reels:2,ads:2},17000], ['T7',{...DEFAULT_STATE(),platforms:{facebook:true,instagram:true},posts:5,reels:2},18000], ['T8',{...DEFAULT_STATE(),platforms:{facebook:true,instagram:true,tiktok:true},posts:6,reels:4,ads:4,prepayMonths:3},35000], ['T9',{...DEFAULT_STATE(),platforms:{facebook:true,instagram:true},posts:4,reels:2,ads:2,adBudget:20000},15000], ['T10',{...DEFAULT_STATE(),platforms:{facebook:true,instagram:true},posts:6},9000]
-      ]; const results=cases.map(([name,input,expected])=>{const result=calculate(input); const checks=[result.total===expected]; if(name==='T4') checks.push(result.warnings.some(w=>w.includes('YouTube need video'))); if(name==='T8') checks.push(result.discounted===33300); if(name==='T9') checks.push(input.adBudget===20000 && result.total===15000); if(name==='T10') checks.push(result.warnings.some(w=>w.includes('Rs 7,000'))); return {name,pass:checks.every(Boolean),detail:checks.every(Boolean)?'PASS':`FAIL (total ${result.total})`}; }); PRESETS.forEach((preset,index)=>{const m=calculate({...DEFAULT_STATE(),...presetState(preset)}).total; const o=calculate({...DEFAULT_STATE(),...presetState(preset),mode:'oneoff'}).total; results.push({name:`T12-${index+1}`,pass:o>m,detail:o>m?`PASS (one-off ${money(o)} > monthly ${money(m)})`:`FAIL (one-off ${o} vs monthly ${m})`}); const result=calculate({...DEFAULT_STATE(),...presetState(preset)}); const expected=[15000,24000,29000,35000,48000,54000,60000,75000][index]; results.push({name:`T11-${index+1}`,pass:result.total===expected,detail:result.total===expected?'PASS':`FAIL (total ${result.total})`});}); const panel=$('testPanel'); panel.hidden=false; panel.replaceChildren(el('strong',`${results.filter(item=>item.pass).length}/${results.length} tests passing`)); results.forEach(item=>panel.append(el('div',`${item.name}: ${item.detail}`,item.pass?'test-pass':'test-fail'))); results.forEach(item=>console[item.pass?'log':'error'](`${item.name}: ${item.detail}`)); }
-    document.querySelector('[data-mode=oneoff] small').textContent = `Single campaign · +${CONFIG.oneOffPremiumPct}%`;
+      ['T1 Essential', {...DEFAULT_STATE(),platforms:{facebook:true,instagram:true},posts:4,reels:2,ads:2}, 15000],
+      ['T2 Premium', {...DEFAULT_STATE(),platforms:{facebook:true,instagram:true,tiktok:true,linkedin:true},posts:6,reels:4,ads:6,inbox:true}, 35000],
+      ['T3 Premium one-off (single prices)', {...DEFAULT_STATE(),mode:'oneoff',platforms:{facebook:true,instagram:true,tiktok:true,linkedin:true},posts:6,reels:4,ads:6,inbox:true}, 47000],
+      ['T4 YouTube without video', {...DEFAULT_STATE(),platforms:{facebook:true,instagram:true,youtube:true},posts:6,ads:2}, 13875],
+      ['T5 Essential + LinkedIn', {...DEFAULT_STATE(),platforms:{facebook:true,instagram:true,linkedin:true},posts:4,reels:2,ads:2}, 15500],
+      ['T6 Essential + 1 AI video (no step yet)', {...DEFAULT_STATE(),platforms:{facebook:true,instagram:true},posts:4,reels:2,ads:2,aiVideos:1}, 18500],
+      ['T7 Monthly, 1 post = package price', {...DEFAULT_STATE(),platforms:{facebook:true},posts:1}, 2000],
+      ['T8', {...DEFAULT_STATE(),platforms:{facebook:true,instagram:true,tiktok:true,linkedin:true},posts:6,reels:4,ads:6,inbox:true,prepayMonths:3}, 35000],
+      ['T9', {...DEFAULT_STATE(),platforms:{facebook:true,instagram:true},posts:4,reels:2,ads:2,adBudget:20000}, 15000],
+      ['T10 Essential + 2 posts (625)', {...DEFAULT_STATE(),platforms:{facebook:true,instagram:true},posts:6,reels:2,ads:2}, 18250],
+      ['T13 Monthly content only: 1 post', {...DEFAULT_STATE(),manage:false,posts:1}, 1500],
+      ['T14 Monthly content only: FB+IG, no fee', {...DEFAULT_STATE(),manage:false,platforms:{facebook:true,instagram:true},posts:4,reels:2}, 11000],
+      ['T15 FB+TikTok 6 posts 4 videos (750)', {...DEFAULT_STATE(),platforms:{facebook:true,tiktok:true},posts:6,reels:4}, 20500],
+      ['T16 Essential one-off', {...DEFAULT_STATE(),mode:'oneoff',platforms:{facebook:true,instagram:true},posts:4,reels:2,ads:2}, 20000],
+      ['T18 One-off 1 post', {...DEFAULT_STATE(),mode:'oneoff',platforms:{facebook:true},posts:1}, 3000],
+      ['T19 Essential + inbox replies', {...DEFAULT_STATE(),platforms:{facebook:true,instagram:true},posts:4,reels:2,ads:2,inbox:true}, 17000],
+      ['T20 Content only ignores inbox', {...DEFAULT_STATE(),manage:false,inbox:true,platforms:{facebook:true},posts:1}, 1500],
+      ['T17 Management cap 1,000', {...DEFAULT_STATE(),platforms:{facebook:true},posts:20,reels:10}, 30000+25000+1000]
+      ]; const results=cases.map(([name,input,expected])=>{const result=calculate(input); const checks=[result.total===expected]; if(name.startsWith('T4')) checks.push(result.warnings.some(w=>w.includes('YouTube need video')));  if(name==='T8') checks.push(result.discounted===33250); if(name==='T9') checks.push(input.adBudget===20000 && result.total===15000); if(name.startsWith('T10')) checks.push(result.feePerPlatform===625); if(name.startsWith('T15')) checks.push(result.feePerPlatform===750); return {name,pass:checks.every(Boolean),detail:checks.every(Boolean)?'PASS':`FAIL (total ${result.total})`}; }); PRESETS.forEach((preset,index)=>{const m=calculate({...DEFAULT_STATE(),...presetState(preset)}).total; const o=calculate({...DEFAULT_STATE(),...presetState(preset),mode:'oneoff'}).total; results.push({name:`T12-${index+1}`,pass:o>m,detail:o>m?`PASS (one-off ${money(o)} > monthly ${money(m)})`:`FAIL (one-off ${o} vs monthly ${m})`}); const result=calculate({...DEFAULT_STATE(),...presetState(preset)}); const expected=[15000,35000][index]; results.push({name:`T11-${index+1}`,pass:result.total===expected,detail:result.total===expected?'PASS':`FAIL (total ${result.total})`});}); const panel=$('testPanel'); panel.hidden=false; panel.replaceChildren(el('strong',`${results.filter(item=>item.pass).length}/${results.length} tests passing`)); results.forEach(item=>panel.append(el('div',`${item.name}: ${item.detail}`,item.pass?'test-pass':'test-fail'))); results.forEach(item=>console[item.pass?'log':'error'](`${item.name}: ${item.detail}`)); }
     buildInputs(); renderPresetButtons(); syncInputs(); update();
     document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>{state.mode=button.dataset.mode; state.basedOn=null; update();}));
-    $('prepayMonths').addEventListener('change',event=>{state.prepayMonths=Number(event.target.value); update();}); $('adBudget').addEventListener('input',event=>{state.adBudget=clamp(event.target.value,0,10000000); event.target.value=String(state.adBudget); state.basedOn=null; update();}); $('clientName').addEventListener('input',event=>{state.clientName=event.target.value; update();}); $('copyButton').addEventListener('click',copyQuote); $('printButton').addEventListener('click',()=>{buildPrintView(lastResult); window.print();}); $('resetButton').addEventListener('click',reset);
+    $('manageToggle').addEventListener('change',event=>{state.manage=event.target.checked; if(!state.manage) state.inbox=false; state.basedOn=null; update();}); $('inboxToggle').addEventListener('change',event=>{state.inbox=event.target.checked; state.basedOn=null; update();}); $('prepayMonths').addEventListener('change',event=>{state.prepayMonths=Number(event.target.value); update();}); $('adBudget').addEventListener('input',event=>{state.adBudget=clamp(event.target.value,0,10000000); event.target.value=String(state.adBudget); state.basedOn=null; update();}); $('clientName').addEventListener('input',event=>{state.clientName=event.target.value; update();}); $('copyButton').addEventListener('click',copyQuote); $('printButton').addEventListener('click',()=>{buildPrintView(lastResult); window.print();}); $('resetButton').addEventListener('click',reset);
     window.calculate=calculate; window.render=render; window.getState=()=>state;
     if(new URLSearchParams(location.search).get('test')==='1') runTests();
   </script>

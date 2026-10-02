@@ -47,7 +47,7 @@ body { margin:0; color:var(--text); background:var(--canvas); font-family:Poppin
 .mode button.active { background:var(--ink); color:#fff; }
 
 /* Package cards */
-.presets { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--s2); }
+.presets { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:var(--s2); }
 .preset { position:relative; text-align:left; border:2px solid var(--line); border-radius:var(--r-md); background:var(--surface); padding:var(--s3); font:inherit; color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s, color .15s, transform .15s; }
 .preset:hover { border-color:var(--blue); transform:translateY(-2px); }
 .preset:active { transform:translateY(0); }
@@ -170,7 +170,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (max-width:1000px) {
   .layout { grid-template-columns:1fr; }
   .quote-card { position:static; }
-  .presets { grid-template-columns:repeat(4,minmax(0,1fr)); }
+
 }
 @media (max-width:760px) {
   .presets { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -242,3 +242,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (max-width:1000px) { .contact { display:none; } }
 @media (max-width:760px) { .topbar { flex-wrap:wrap; } .tabs { order:3; width:100%; } .tabs a { flex:1; text-align:center; } }
 @media print { .tabs { display:none !important; } }
+
+/* Toggle row (shared) */
+.toggle { display:flex; align-items:center; justify-content:space-between; gap:var(--s3); padding:12px 14px; border:2px solid var(--line); border-radius:var(--r-md); cursor:pointer; font-size:13px; font-weight:600; transition:border-color .15s, background .15s; }
+.toggle small { display:block; font-weight:400; font-size:11px; color:var(--muted); }
+.toggle input { width:20px; height:20px; accent-color:var(--blue); flex:none; }
+.toggle:has(input:checked) { border-color:var(--blue); background:var(--blue-soft); }
+.platforms.content-only .check:has(input:checked) { background:var(--surface); color:var(--ink); }
+.platforms.content-only .check:has(input:checked) .icon { color:var(--brand); }

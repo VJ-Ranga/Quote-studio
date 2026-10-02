@@ -1,5 +1,23 @@
 # CloudyCode Social Media Pricing Calculator — Build Spec
 
+> **Current pricing (updated 2 October 2026) — overrides the rate card, packages and tests below.** The live rules are in `CONFIG` in `index.html`.
+>
+> | Item | Monthly (package price) | One-off (single price) |
+> |---|---|---|
+> | Static post | Rs 1,500 | Rs 2,000 |
+> | Post in 2 sizes (IG square + FB landscape) | Rs 2,000 | Rs 2,500 |
+> | Reel / video | Rs 2,500 | Rs 3,000 |
+> | AI video | Rs 3,500 | Rs 4,000 |
+> | Ad campaign setup | Rs 1,500 | Rs 2,000 |
+> | Platform management, per platform | from Rs 500 | from Rs 1,000 |
+> | Inbox & comment replies, per platform | Rs 1,000 | Rs 1,500 |
+>
+> - Monthly always uses package prices; one-off uses single prices. No % premium, no rounding.
+> - Management: base covers 4 posts + 2 videos; +Rs 125 per platform for every 2 extra posts/videos; max base + Rs 500. Posts in 2 sizes use the max.
+> - "We manage these platforms" unticked = content only (no management, no inbox).
+> - Packages: **Essential Rs 15,000** (FB, IG · 4 posts · 2 reels · 2 ads · mgmt 2 × 500). **Premium Rs 35,000** (FB, IG, TikTok, LinkedIn · 6 posts · 4 reels · 6 ads · mgmt 4 × 750 · inbox 4 × 1,000). Ultimate and the in-between packages are removed pending review.
+> - Prepay: 3 months 5% off, 6 months 10% off.
+
 Build a single-page pricing calculator for CloudyCode's social media services. A staff member picks platforms, content quantities and extras; the page shows a line-item quote, the total, and which standard package (if any) is better value.
 
 The pricing logic below reproduces CloudyCode's three published package prices exactly (Essential Rs 15,000, Premium Rs 35,000, Ultimate Rs 75,000), now with ad campaign setups included (2 / 4 / 6). Ad campaign setup is Rs 2,000 each; the ad budget itself is always separate. Every other price, including the new in-between packages, comes from the same formula.

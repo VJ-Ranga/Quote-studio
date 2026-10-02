@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <style>
-    .plans { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--s2); }
+    .plans { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:var(--s2); }
     .plans .preset { min-height:96px; }
     .plans .preset .p-meta { line-height:1.4; }
     .preset:disabled { opacity:.45; cursor:not-allowed; transform:none; border-color:var(--line); }
@@ -67,6 +67,7 @@
         <div class="step-head"><span class="step-no">4</span><div class="grow"><h2>Quote details</h2><p>Optional.</p></div></div>
         <div class="fields">
           <div class="field"><label for="clientName">Client name</label><input id="clientName" type="text" maxlength="100" autocomplete="organization" placeholder="Client or business name"></div>
+          <div class="field"><label for="prepayMonths">Payment term</label><select id="prepayMonths"><option value="1">Pay monthly</option><option value="6">6 months upfront · 5% off</option><option value="12">12 months upfront · 10% off</option></select><small>Discount on monthly plans only, not IT support.</small></div>
           <div class="field"><label for="website">Client website</label><input id="website" type="text" maxlength="120" placeholder="e.g. example.lk"></div>
         </div>
       </section>
@@ -76,6 +77,7 @@
       <div id="monthlyBlock"></div>
       <div class="total"><span>Monthly</span><div><strong id="quoteTotal">Rs 0</strong><small id="totalSuffix">per month</small></div></div>
       <span class="sr-only" id="totalLive" aria-live="polite"></span>
+      <div id="prepayOutput"></div>
       <div id="supportBlock"></div>
       <div class="warnings" id="warnings"></div>
       <div class="included" id="included"></div>
@@ -93,14 +95,16 @@
       currency: "Rs",
       care: {
         none:     { label: "No website care", price: 0, short: "Support only, billed by the hour" },
-        care:     { label: "Website Care", price: 5000, placeholder: true, short: "Checks, updates, backups, security",
+        lite:     { label: "Website Care Lite", price: 2500, placeholder: true, short: "1 update per month + backup",
+                    includes: ["One update visit per month: plugin, theme and WordPress updates", "Check the site works after updating", "Monthly backup", "Critical security fixes", "No weekly checks, small fixes or support discount"] },
+        care:     { label: "Website Care", price: 5000, placeholder: true, supportDiscount: true, short: "Checks, updates, backups, security",
                     includes: ["Weekly website check (site up, forms working, errors)", "Monthly plugin, theme and WordPress updates", "Monthly backup", "Security fixes when a vulnerability is reported", "Up to 1 hour of small fixes per month", "No blog uploads or content edits"] },
-        carePlus: { label: "Website Care Plus", price: 8000, placeholder: true, short: "Care + 4 blog uploads + 2 hrs edits",
+        carePlus: { label: "Website Care Plus", price: 8000, placeholder: true, supportDiscount: true, short: "Care + 4 blog uploads + 2 hrs edits",
                     includes: ["Everything in Website Care", "4 blog uploads per month (client sends text and images)", "Up to 2 hours of small fixes and edits per month"] },
       },
       seo: {
         none:    { label: "No SEO", price: 0, short: "Website care only" },
-        lite:    { label: "SEO Lite", price: 5000, placeholder: true, requiresCare: true, short: "Add-on for Care clients",
+        lite:    { label: "SEO Lite", price: 5000, placeholder: true, requiresCare: true, short: "Add-on for any care plan",
                    includes: ["SEO titles and meta descriptions on new posts", "2 Google Business Profile posts per month", "Monthly Search Console error check", "Short monthly summary"] },
         starter: { label: "SEO Starter", price: 10000, placeholder: true, short: "5 keywords, Google profile, report",
                    includes: ["First month: research 5 target keywords", "First month: SEO on the 5 main pages", "First month: Google Business Profile and Search Console setup", "SEO on every new post", "4 Google Business Profile posts per month", "Fix Search Console errors", "Simple monthly ranking and traffic report"] },
@@ -108,6 +112,12 @@
       // Discount when these two are taken together.
       bundles: [{ care: "carePlus", seo: "starter", label: "Care Plus + SEO Starter bundle", discount: 3000 }],
       seoMinimumMonths: 3,
+      // Prepay discount on monthly plans (not on IT support). Discounted monthly price rounds to nearest Rs 100.
+      prepayDiscounts: [
+        { months: 1,  pct: 0 },
+        { months: 6,  pct: 5 },
+        { months: 12, pct: 10 },
+      ],
       support: {
         basicRate: 1000,   // per hour, billed in 30-minute blocks, 30-minute minimum
         expertRate: 2000,  // per hour, 1-hour minimum, then 30-minute blocks
@@ -131,13 +141,13 @@
     const LIMITS = { basicHours:[0,40,.5], expertHours:[0,40,.5], onsiteVisits:[0,20,1], onsiteHours:[0,80,.5], prepaidBlocks:[0,10,1] };
     const LABELS = { basicHours:'Basic support hours', expertHours:'Expert support hours', onsiteVisits:'On-site visits', onsiteHours:'On-site hours (total)', prepaidBlocks:'Prepaid 5-hour blocks' };
     const HINTS = { basicHours:()=>`${money(CONFIG.support.basicRate)} / hour`, expertHours:()=>`${money(CONFIG.support.expertRate)} / hour, 1 hr min`, onsiteVisits:()=>`Min ${CONFIG.support.onsite.minHours} hrs (${money(CONFIG.support.onsite.minHours * CONFIG.support.onsite.rate)}) + ${money(CONFIG.support.onsite.travelColombo)} travel`, onsiteHours:()=>`${money(CONFIG.support.onsite.rate)} / hour on-site`, prepaidBlocks:()=>`${money(CONFIG.support.prepaidBlock.price)} each (Basic)` };
-    const DEFAULT_STATE = () => ({ care:'none', seo:'none', basicHours:0, expertHours:0, onsiteVisits:0, onsiteHours:0, prepaidBlocks:0, urgent:false, outsideColombo:false, clientName:'', website:'' });
+    const DEFAULT_STATE = () => ({ care:'none', seo:'none', basicHours:0, expertHours:0, onsiteVisits:0, onsiteHours:0, prepaidBlocks:0, urgent:false, outsideColombo:false, prepayMonths:1, clientName:'', website:'' });
 
     const money = n => `${CONFIG.currency} ${Math.round(n).toLocaleString('en-US')}`;
     const hrs = n => `${n % 1 ? n.toFixed(1) : n} hr${n === 1 ? '' : 's'}`;
     const clamp = (v, min, max) => { const n = Number(v); return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : 0; };
     const toHalf = n => Math.ceil(n * 2) / 2;
-    const normalized = input => { const s = {...DEFAULT_STATE(), ...input}; Object.entries(LIMITS).forEach(([k,[min,max,step]]) => { s[k] = clamp(s[k], min, max); if (step === 1) s[k] = Math.round(s[k]); }); if (!CONFIG.care[s.care]) s.care = 'none'; if (!CONFIG.seo[s.seo]) s.seo = 'none'; return s; };
+    const normalized = input => { const s = {...DEFAULT_STATE(), ...input}; Object.entries(LIMITS).forEach(([k,[min,max,step]]) => { s[k] = clamp(s[k], min, max); if (step === 1) s[k] = Math.round(s[k]); }); if (!CONFIG.care[s.care]) s.care = 'none'; if (!CONFIG.seo[s.seo]) s.seo = 'none'; if (!CONFIG.prepayDiscounts.some(d => d.months === Number(s.prepayMonths))) s.prepayMonths = 1; s.prepayMonths = Number(s.prepayMonths); return s; };
     const line = (label, amount, sub) => ({ label, amount, sub });
 
     function calculate(input) {
@@ -150,11 +160,15 @@
       const monthly = [];
       if (hasCare) monthly.push(line(care.label, care.price, 'per month'));
       let seoCharged = s.seo !== 'none';
-      if (seo.requiresCare && !hasCare) { seoCharged = false; warnings.push(`${seo.label} is only available with Website Care or Care Plus. Choose a care plan or SEO Starter.`); }
+      if (seo.requiresCare && !hasCare) { seoCharged = false; warnings.push(`${seo.label} is only available with a website care plan. Choose a care plan or SEO Starter.`); }
       if (seoCharged) monthly.push(line(seo.label, seo.price, `per month · ${CONFIG.seoMinimumMonths}-month minimum`));
       const bundle = CONFIG.bundles.find(b => b.care === s.care && b.seo === s.seo && seoCharged);
       if (bundle) monthly.push(line(bundle.label, -bundle.discount, 'discount'));
       const monthlyTotal = monthly.reduce((t, l) => t + l.amount, 0);
+      const prepay = CONFIG.prepayDiscounts.find(d => d.months === s.prepayMonths);
+      const prepayMonthly = Math.floor((monthlyTotal * (100 - prepay.pct) + 5000) / 10000) * 100;
+      const prepayInfo = monthlyTotal && prepay.pct ? { months: prepay.months, pct: prepay.pct, monthly: prepayMonthly, total: prepayMonthly * prepay.months, saving: (monthlyTotal - prepayMonthly) * prepay.months } : null;
+      if (s.prepayMonths > 1 && !monthlyTotal) warnings.push('Payment term discount only applies to monthly plans. Choose a care or SEO plan.');
 
       // Support (estimate)
       const support = [];
@@ -174,7 +188,7 @@
       const urgentCost = s.urgent && hoursCost ? Math.round(hoursCost * sup.urgentPct / 100) : 0;
       if (urgentCost) support.push(line(`Urgent / after-hours (+${sup.urgentPct}%)`, urgentCost, `on ${money(hoursCost)} of support`));
       if (s.urgent && !hoursCost) warnings.push('Urgent is ticked but no support hours are entered.');
-      const careDiscount = hasCare && hoursCost ? Math.round((hoursCost + urgentCost) * sup.careDiscountPct / 100) : 0;
+      const careDiscount = care.supportDiscount && hoursCost ? Math.round((hoursCost + urgentCost) * sup.careDiscountPct / 100) : 0;
       if (careDiscount) support.push(line(`Care client discount (${sup.careDiscountPct}%)`, -careDiscount, 'on support hours'));
       if (visits && !s.outsideColombo) support.push(line('Travel (Colombo)', visits * sup.onsite.travelColombo, `${visits} × ${money(sup.onsite.travelColombo)}`));
       if (visits && s.outsideColombo) { support.push(line('Travel (outside Colombo)', 0, 'quoted separately')); warnings.push('Travel outside Colombo is not in this total. Add the travel cost before sending.'); }
@@ -188,7 +202,7 @@
       const includes = [];
       if (hasCare) includes.push({ title: care.label, items: care.includes });
       if (seoCharged) includes.push({ title: seo.label, items: seo.includes });
-      return { state: s, monthly, monthlyTotal, support, supportTotal, basicBilled, expertBilled, bundle, seoCharged, warnings, includes };
+      return { state: s, monthly, monthlyTotal, prepayInfo, support, supportTotal, basicBilled, expertBilled, bundle, seoCharged, warnings, includes };
     }
 
     // ---------- UI ----------
@@ -214,7 +228,7 @@
           b.append(el('span', plan.label, 'p-name'), el('span', plan.price ? `${money(plan.price)}/mo` : '—', 'p-price num'), el('span', plan.short, 'p-meta'));
           if (key === 'carePlus' || key === 'starter') b.append(el('span', 'Best value', 'p-tag'));
           const c = el('span', undefined, 'p-check'); c.innerHTML = TICK; b.append(c);
-          if (plan.requiresCare && state.care === 'none') { b.disabled = true; b.title = 'Needs Website Care or Care Plus'; }
+          if (plan.requiresCare && state.care === 'none') { b.disabled = true; b.title = 'Needs a website care plan'; }
           b.addEventListener('click', () => { state[group] = key; update(); });
           wrap.append(b);
         });
@@ -272,6 +286,8 @@
       $('mobileTotal').textContent = money(showMonthly ? r.monthlyTotal : r.supportTotal);
       $('totalLive').textContent = `Monthly ${money(r.monthlyTotal)}, support estimate ${money(r.supportTotal)}`;
 
+      const pp = $('prepayOutput'); pp.replaceChildren();
+      if (r.prepayInfo) { const box = el('div', undefined, 'prepay'); box.append(el('strong', `${r.prepayInfo.months} months upfront (${r.prepayInfo.pct}% off)`), el('span', `${money(r.prepayInfo.monthly)}/month · ${money(r.prepayInfo.total)} paid upfront · saves ${money(r.prepayInfo.saving)}`)); pp.append(box); }
       const sb = $('supportBlock'); sb.replaceChildren();
       if (r.support.length && showMonthly) {
         sb.append(el('div', 'IT support · estimate', 'q-group'), lineRows(r.support));
@@ -293,7 +309,7 @@
       const r = lastResult, out = ['CloudyCode – Website & IT Quote'];
       if (state.clientName) out.push(`Client: ${state.clientName}`); if (state.website) out.push(`Website: ${state.website}`);
       out.push(`Plan: ${planLabel(r)}`, '');
-      if (r.monthly.length) { out.push('MONTHLY'); r.monthly.forEach(l => out.push(`${l.label} ........ ${l.amount < 0 ? '−' : ''}${money(Math.abs(l.amount))}`)); out.push(`TOTAL ........ ${money(r.monthlyTotal)} / month`, ''); }
+      if (r.monthly.length) { out.push('MONTHLY'); r.monthly.forEach(l => out.push(`${l.label} ........ ${l.amount < 0 ? '−' : ''}${money(Math.abs(l.amount))}`)); out.push(`TOTAL ........ ${money(r.monthlyTotal)} / month`); if (r.prepayInfo) out.push(`${r.prepayInfo.months} months upfront (${r.prepayInfo.pct}% off): ${money(r.prepayInfo.monthly)} / month · ${money(r.prepayInfo.total)} total · saves ${money(r.prepayInfo.saving)}`); out.push(''); }
       if (r.support.length) { out.push('IT SUPPORT (estimate, billed on time used)'); r.support.forEach(l => out.push(`${l.label} (${l.sub}) ........ ${l.amount < 0 ? '−' : ''}${money(Math.abs(l.amount))}`)); out.push(`Support estimate ........ ${money(r.supportTotal)}`, ''); }
       r.includes.forEach(g => out.push(`${g.title}: ${g.items.join('; ')}`));
       out.push('', 'info@cloudycode.net · +94 76 635 1053');
@@ -317,7 +333,7 @@
       const tb = el('div', undefined, 'pv-sum-total'); tb.append(el('span', 'Monthly'), el('strong', `${money(r.monthlyTotal)} / month`)); sum.append(tb); v.append(sum);
 
       const table = (rows, totalLabel, total) => { const t = el('table', undefined, 'pv-table'); const th = el('thead'); const hr = el('tr'); ['Item', 'Detail', 'Amount'].forEach((h, i) => hr.append(el('th', h, i === 2 ? 'num' : ''))); th.append(hr); t.append(th); const b = el('tbody'); rows.forEach(l => { const tr = el('tr'); tr.append(el('td', l.label), el('td', l.sub), el('td', `${l.amount < 0 ? '−' : ''}${money(Math.abs(l.amount))}`, 'num')); b.append(tr); }); t.append(b); const f = el('tfoot'); const fr = el('tr'); fr.append(el('td', totalLabel), el('td', ''), el('td', total, 'num')); f.append(fr); t.append(f); return t; };
-      if (r.monthly.length) section('Monthly plan', 'Billed at the start of each month.').append(table(r.monthly, 'Monthly total', `${money(r.monthlyTotal)} / month`));
+      if (r.monthly.length) { const ms = section('Monthly plan', r.prepayInfo ? `Paid ${r.prepayInfo.months} months upfront.` : 'Billed at the start of each month.'); ms.append(table(r.monthly, 'Monthly total', `${money(r.monthlyTotal)} / month`)); if (r.prepayInfo) ms.append(el('p', `${r.prepayInfo.months} months upfront (${r.prepayInfo.pct}% off): ${money(r.prepayInfo.monthly)} / month · ${money(r.prepayInfo.total)} paid upfront · you save ${money(r.prepayInfo.saving)}.`, 'pv-callout')); }
       if (r.includes.length) { const s = section('What is included'); const g = el('div', undefined, 'pv-platforms'); r.includes.forEach(x => { const c = el('div', undefined, 'pv-plat'); const top = el('div', undefined, 'pv-plat-top'); top.append(el('strong', x.title), el('span', `${money((x.title === CONFIG.care[r.state.care]?.label ? CONFIG.care[r.state.care] : CONFIG.seo[r.state.seo]).price)}/mo`)); c.append(top); const ul = el('ul'); x.items.forEach(i => ul.append(el('li', i))); c.append(ul); g.append(c); }); s.append(g); }
       if (r.support.length) section('IT support (estimate)', 'Billed on the time actually used. The hours below are an estimate.').append(table(r.support, 'Support estimate', money(r.supportTotal)));
 
@@ -355,6 +371,12 @@
         ['T14 On-site 2 visits, 4 hours billed as 6', S({onsiteVisits:2, onsiteHours:4}), r => r.supportTotal === 20000],
         ['T15 On-site hours without visits = 1 visit', S({onsiteHours:2}), r => r.supportTotal === 10000],
         ['T16 Outside Colombo: no travel in total, warning', S({onsiteVisits:1, outsideColombo:true}), r => r.supportTotal === 9000 && r.warnings.some(w => w.includes('outside Colombo'))],
+        ['T18 Bundle, 6 months upfront 5% off', S({care:'carePlus', seo:'starter', prepayMonths:6}), r => r.prepayInfo.monthly === 14300 && r.prepayInfo.total === 85800],
+        ['T19 Care, 12 months upfront 10% off', S({care:'care', prepayMonths:12}), r => r.prepayInfo.monthly === 4500 && r.prepayInfo.total === 54000 && r.prepayInfo.saving === 6000],
+        ['T20 Prepay does not touch support', S({care:'care', basicHours:2, prepayMonths:12}), r => r.supportTotal === 1800 && r.monthlyTotal === 5000],
+        ['T21 Care Lite only', S({care:'lite'}), r => r.monthlyTotal === 2500],
+        ['T22 Care Lite + SEO Lite allowed', S({care:'lite', seo:'lite'}), r => r.monthlyTotal === 7500],
+        ['T23 Care Lite gets no support discount', S({care:'lite', basicHours:2}), r => r.supportTotal === 2000],
         ['T17 Care discount not applied to travel', S({care:'care', onsiteVisits:1}), r => r.supportTotal === 9100],
         ['T11 Prepaid block, no care discount on it', S({care:'care', prepaidBlocks:1}), r => r.supportTotal === 4500],
         ['T12 Basic 0.2h billed as 0.5h', S({basicHours:.2}), r => r.supportTotal === 500],
@@ -369,9 +391,10 @@
     $('outsideColombo').addEventListener('change', e => { state.outsideColombo = e.target.checked; update(); });
     $('clientName').addEventListener('input', e => { state.clientName = e.target.value; update(); });
     $('website').addEventListener('input', e => { state.website = e.target.value; update(); });
+    $('prepayMonths').addEventListener('change', e => { state.prepayMonths = Number(e.target.value); update(); });
     $('copyButton').addEventListener('click', () => navigator.clipboard?.writeText(quoteText()).then(() => { const b = $('copyButton'); b.textContent = 'Copied ✓'; b.classList.add('done'); setTimeout(() => { b.textContent = 'Copy quote as text'; b.classList.remove('done'); }, 1600); }));
     $('printButton').addEventListener('click', () => { buildPrintView(lastResult); window.print(); });
-    $('resetButton').addEventListener('click', () => { state = DEFAULT_STATE(); $('urgent').checked = false; $('outsideColombo').checked = false; $('clientName').value = ''; $('website').value = ''; update(); });
+    $('resetButton').addEventListener('click', () => { state = DEFAULT_STATE(); $('urgent').checked = false; $('outsideColombo').checked = false; $('prepayMonths').value = '1'; $('clientName').value = ''; $('website').value = ''; update(); });
     update();
     if (new URLSearchParams(location.search).get('test') === '1') runTests();
     window.calculate = calculate;
