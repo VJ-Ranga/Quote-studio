@@ -213,7 +213,7 @@ The tier-limit figure X = (rounded total with one more static post) − (current
 
 ```
 CloudyCode – Social Media Quote
-Client: Range Global Education
+Client: [Client name]
 Plan: Custom (based on Premium) · Monthly
 
 Platforms: Facebook, Instagram, TikTok, LinkedIn

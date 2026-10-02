@@ -7,203 +7,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --ink:#141729; --ink-2:#1F2342; --ink-3:#2A2F55; --canvas:#EEF1F8; --surface:#FFFFFF; --line:#DFE4F0;
-      --text:#141729; --muted:#6B7390; --on-dark:#FFFFFF; --on-dark-muted:#A3AACB;
-      --blue:#2F6BFF; --blue-strong:#1F55E0; --blue-soft:#E7EEFF; --purple:#8B3DFF; --purple-soft:#F1E8FF;
-      --mint:#0FB37A; --mint-soft:#DDF7EC; --amber:#F5A30B; --amber-soft:#FFF3D9;
-      --r-sm:10px; --r-md:14px; --r-lg:22px;
-      --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px;
-    }
-    * { box-sizing:border-box; }
-    html { scroll-behavior:smooth; }
-    body { margin:0; color:var(--text); background:var(--canvas); font-family:Poppins, system-ui, sans-serif; font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased; }
-    .num { font-variant-numeric:tabular-nums; }
-    .shell { width:min(1200px, calc(100% - 32px)); margin:0 auto; }
-
-    /* Top bar */
-    .topbar { display:flex; align-items:center; justify-content:space-between; gap:var(--s4); padding:var(--s5) 0; }
-    .brand { display:flex; align-items:center; gap:var(--s3); text-decoration:none; color:var(--ink); }
-    .brand-mark { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:var(--ink); color:#fff; font-weight:700; font-size:13px; letter-spacing:-.06em; white-space:nowrap; }
-    .brand-mark b { color:#8FB0FF; font-weight:700; }
-    .brand-name { font-weight:700; font-size:18px; letter-spacing:-.03em; line-height:1.1; }
-    .brand-name small { display:block; font-weight:500; font-size:12px; color:var(--muted); letter-spacing:0; }
-    .contact { display:flex; gap:var(--s2); flex-wrap:wrap; }
-    .contact a { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:999px; background:var(--surface); color:var(--ink); text-decoration:none; font-size:12px; font-weight:500; border:1px solid var(--line); transition:border-color .15s, color .15s; }
-    .contact a:hover { border-color:var(--blue); color:var(--blue); }
-
-    .intro { padding:var(--s3) 0 var(--s6); }
-    .intro h1 { margin:0; font-size:clamp(28px,4.4vw,48px); line-height:1.08; letter-spacing:-.045em; font-weight:800; max-width:16ch; }
-    .intro h1 span { color:var(--blue); }
-    .intro p { margin:var(--s3) 0 0; color:var(--muted); max-width:56ch; }
-
-    .layout { display:grid; grid-template-columns:minmax(0,1fr) 400px; gap:var(--s5); align-items:start; padding-bottom:var(--s7); }
-
-    /* Step cards */
-    .steps { display:grid; gap:var(--s4); }
-    .step { background:var(--surface); border-radius:var(--r-lg); padding:var(--s5); }
-    .step-head { display:flex; align-items:center; gap:var(--s3); margin-bottom:var(--s4); }
-    .step-no { width:30px; height:30px; flex:none; border-radius:9px; display:grid; place-items:center; background:var(--blue-soft); color:var(--blue); font-weight:700; font-size:13px; }
-    .step-head h2 { margin:0; font-size:16px; font-weight:700; letter-spacing:-.02em; }
-    .step-head p { margin:0; color:var(--muted); font-size:12px; }
-    .step-head .grow { flex:1; }
-
-    /* Mode segmented control */
-    .mode { display:grid; grid-template-columns:1fr 1fr; gap:var(--s1); padding:var(--s1); background:var(--canvas); border-radius:var(--r-md); }
-    .mode button { border:0; border-radius:var(--r-sm); padding:12px; font:inherit; font-weight:600; font-size:13px; color:var(--muted); background:transparent; cursor:pointer; transition:background .15s, color .15s; }
-    .mode button small { display:block; font-weight:400; font-size:11px; opacity:.8; }
-    .mode button:hover { color:var(--ink); }
-    .mode button.active { background:var(--ink); color:#fff; }
-
-    /* Package cards */
-    .presets { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--s2); }
-    .preset { position:relative; text-align:left; border:2px solid var(--line); border-radius:var(--r-md); background:var(--surface); padding:var(--s3); font:inherit; color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s, color .15s, transform .15s; }
-    .preset:hover { border-color:var(--blue); transform:translateY(-2px); }
-    .preset:active { transform:translateY(0); }
-    .preset .p-name { display:block; font-weight:700; font-size:13px; letter-spacing:-.01em; }
-    .preset .p-price { display:block; font-weight:800; font-size:17px; letter-spacing:-.03em; margin-top:2px; }
-    .preset .p-meta { display:block; font-size:11px; color:var(--muted); margin-top:4px; }
-    .preset .p-tag { position:absolute; top:-9px; right:10px; padding:1px 8px; border-radius:999px; background:var(--purple); color:#fff; font-size:10px; font-weight:600; }
-    .preset .p-check { position:absolute; top:10px; right:10px; width:20px; height:20px; border-radius:50%; display:grid; place-items:center; background:#fff; color:var(--blue); opacity:0; transform:scale(.6); transition:opacity .15s, transform .15s; }
-    .preset .p-check svg { width:12px; }
-    .preset.active { background:var(--blue); border-color:var(--blue); color:#fff; }
-    .preset.active .p-meta { color:#D6E1FF; }
-    .preset.active .p-check { opacity:1; transform:scale(1); }
-    .plan-status { margin-top:var(--s3); display:flex; align-items:center; gap:var(--s2); font-size:12px; color:var(--muted); }
-    .chip { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:600; }
-    .chip.match { background:var(--mint-soft); color:#0A7A53; }
-    .chip.custom { background:var(--canvas); color:var(--muted); }
-
-    /* Platforms */
-    .platforms { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:var(--s2); }
-    .check { --brand:var(--blue); position:relative; display:grid; justify-items:center; gap:6px; padding:var(--s4) var(--s2) var(--s3); border:2px solid var(--line); border-radius:var(--r-md); background:var(--surface); color:var(--ink); font-size:12px; font-weight:600; cursor:pointer; transition:border-color .15s, background .15s, color .15s; }
-    .check[data-platform=facebook] { --brand:#1877F2; } .check[data-platform=instagram] { --brand:#E1306C; } .check[data-platform=tiktok] { --brand:#111111; } .check[data-platform=youtube] { --brand:#FF0000; } .check[data-platform=linkedin] { --brand:#0A66C2; }
-    .check input { position:absolute; opacity:0; pointer-events:none; }
-    .check .icon { width:30px; height:30px; display:block; color:var(--brand); transition:color .15s; }
-    .check .icon svg { width:100%; height:100%; }
-    .check:hover { border-color:var(--brand); }
-    .check:has(input:checked) { background:var(--brand); border-color:var(--brand); color:#fff; }
-    .check:has(input:checked) .icon { color:#fff; }
-    .check .tick { position:absolute; top:6px; right:6px; width:18px; height:18px; border-radius:50%; background:#fff; color:var(--brand); display:grid; place-items:center; opacity:0; transform:scale(.6); transition:opacity .15s, transform .15s; }
-    .check .tick svg { width:11px; }
-    .check:has(input:checked) .tick { opacity:1; transform:scale(1); }
-    .check:has(input:focus-visible) { outline:3px solid #A9C0FF; outline-offset:2px; }
-
-    /* Steppers */
-    .group-label { margin:var(--s4) 0 var(--s2); font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
-    .group-label:first-child { margin-top:0; }
-    .step-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--s2); }
-    .step-row { display:flex; align-items:center; justify-content:space-between; gap:var(--s2); padding:10px 10px 10px 14px; border:2px solid var(--line); border-radius:var(--r-md); background:var(--surface); transition:border-color .15s, background .15s; }
-    .step-row label { font-size:13px; font-weight:600; line-height:1.25; }
-    .step-row label small { display:block; font-weight:400; font-size:11px; color:var(--muted); }
-    .step-row.on { border-color:var(--blue); background:var(--blue-soft); }
-    .badge { display:inline-block; margin-top:3px; padding:1px 7px; border-radius:999px; background:var(--amber-soft); color:#9A6300; font-size:10px; font-weight:600; }
-    .stepper { display:flex; align-items:center; gap:4px; flex:none; }
-    .stepper button { width:32px; height:32px; border-radius:50%; border:0; background:var(--canvas); color:var(--ink); font-size:18px; font-weight:500; line-height:1; cursor:pointer; transition:background .15s, color .15s, transform .1s; }
-    .stepper button:hover { background:var(--blue); color:#fff; }
-    .stepper button:active { transform:scale(.9); }
-    .step-row.on .stepper button { background:#fff; }
-    .step-row.on .stepper button:hover { background:var(--blue); color:#fff; }
-    .stepper input { width:40px; border:0; background:transparent; text-align:center; font:inherit; font-size:16px; font-weight:700; color:var(--ink); padding:4px 0; -moz-appearance:textfield; }
-    .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
-    .step-row.on .stepper input { color:var(--blue); }
-
-    /* Fields */
-    .fields { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--s3); }
-    .field { display:grid; gap:6px; align-content:start; }
-    .field label { font-size:12px; font-weight:600; }
-    .field small { color:var(--muted); font-size:11px; }
-    .field input, .field select { width:100%; border:2px solid var(--line); border-radius:var(--r-sm); padding:10px 12px; font:inherit; font-size:13px; color:var(--ink); background:var(--surface); transition:border-color .15s; }
-    .field input:hover, .field select:hover { border-color:#C5CDE2; }
-    .field input:focus, .field select:focus { border-color:var(--blue); outline:none; }
-
-    /* Quote panel */
-    .quote-card { position:sticky; top:16px; background:var(--ink); color:var(--on-dark); border-radius:var(--r-lg); padding:var(--s5); }
-    .quote-head { display:flex; justify-content:space-between; align-items:flex-start; gap:var(--s3); }
-    .quote-kicker { font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--on-dark-muted); }
-    .quote-head h2 { margin:2px 0 0; font-size:20px; letter-spacing:-.03em; }
-    .client { font-size:12px; color:var(--on-dark-muted); }
-    .plan-pill { text-align:right; font-size:11px; color:var(--on-dark-muted); white-space:pre-line; }
-    .plan-pill strong { display:inline-block; margin-bottom:4px; padding:4px 10px; border-radius:999px; background:var(--ink-3); color:#fff; font-size:12px; }
-    .plan-pill strong.match { background:var(--mint); }
-    .quote-lines { margin-top:var(--s4); border-top:1px solid var(--ink-3); }
-    .line { display:flex; justify-content:space-between; align-items:baseline; gap:var(--s3); padding:10px 0; border-bottom:1px solid var(--ink-3); font-size:13px; }
-    .line .sub { display:block; color:var(--on-dark-muted); font-size:11px; }
-    .line > span:last-child { font-weight:600; white-space:nowrap; font-variant-numeric:tabular-nums; }
-    .line.rounding { color:var(--on-dark-muted); font-size:12px; }
-    .empty { padding:var(--s5) 0; color:var(--on-dark-muted); font-size:13px; text-align:center; }
-    .total { display:flex; justify-content:space-between; align-items:flex-end; gap:var(--s3); padding-top:var(--s4); }
-    .total > span { font-size:12px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--on-dark-muted); padding-bottom:8px; }
-    .total strong { display:block; font-size:clamp(32px,4vw,42px); font-weight:800; letter-spacing:-.05em; line-height:1; font-variant-numeric:tabular-nums; text-align:right; }
-    .total small { display:block; text-align:right; color:var(--on-dark-muted); font-size:12px; margin-top:4px; }
-    .total strong.bump { animation:bump .35s ease; }
-    @keyframes bump { 40% { color:#8FB0FF; transform:scale(1.03); } }
-    .prepay, .budget { margin-top:var(--s3); padding:var(--s3) 14px; border-radius:var(--r-md); background:var(--ink-2); font-size:12px; color:var(--on-dark-muted); }
-    .prepay strong, .budget strong { display:block; color:#fff; font-size:13px; }
-    .prepay { border-left:3px solid var(--mint); }
-    .budget { border:1px dashed #4A5080; }
-    .warnings { display:grid; gap:6px; margin-top:var(--s3); }
-    .warning { display:flex; gap:8px; align-items:flex-start; padding:10px 12px; border-radius:var(--r-sm); background:rgba(245,163,11,.14); color:#FFCF7A; font-size:12px; }
-    .warning::before { content:"!"; flex:none; width:16px; height:16px; border-radius:50%; background:var(--amber); color:var(--ink); font-size:11px; font-weight:800; display:grid; place-items:center; margin-top:1px; }
-    .upsell { margin-top:var(--s3); padding:var(--s4); border-radius:var(--r-md); background:linear-gradient(120deg,var(--blue),var(--purple)); font-size:13px; }
-    .upsell small { display:block; font-size:11px; letter-spacing:.08em; text-transform:uppercase; opacity:.8; margin-bottom:2px; }
-    .upsell button { margin-top:var(--s3); border:0; border-radius:999px; padding:8px 14px; background:#fff; color:var(--ink); font:inherit; font-size:12px; font-weight:600; cursor:pointer; transition:transform .15s; }
-    .upsell button:hover { transform:translateX(2px); }
-    .included { margin-top:var(--s4); }
-    .included h3 { margin:0 0 var(--s2); font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--on-dark-muted); }
-    .included ul { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:6px; }
-    .included li { padding:4px 10px; border-radius:999px; background:var(--ink-2); font-size:11px; }
-    .included li::before { content:"✓ "; color:var(--mint); font-weight:700; }
-    .actions { display:grid; grid-template-columns:1fr 1fr; gap:var(--s2); margin-top:var(--s5); }
-    .actions button { border:1px solid var(--ink-3); border-radius:var(--r-md); padding:12px; background:transparent; color:#fff; font:inherit; font-size:13px; font-weight:600; cursor:pointer; transition:background .15s, border-color .15s; }
-    .actions button:hover { background:var(--ink-2); border-color:#4A5080; }
-    .actions .primary { grid-column:1 / -1; background:var(--blue); border-color:var(--blue); }
-    .actions .primary:hover { background:var(--blue-strong); border-color:var(--blue-strong); }
-    .actions .primary.done { background:var(--mint); border-color:var(--mint); }
-
-    footer { padding:var(--s5) 0 var(--s7); color:var(--muted); font-size:12px; display:flex; justify-content:space-between; gap:var(--s3); flex-wrap:wrap; }
-
-    .mobile-bar { display:none; }
-    .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
-    .test-panel { position:fixed; left:14px; bottom:14px; width:280px; max-height:60vh; overflow:auto; z-index:30; padding:13px; border-radius:var(--r-md); background:#fff; border:1px solid var(--line); font-size:11px; }
-    .test-panel strong { display:block; margin-bottom:6px; }
-    .test-pass { color:#0A7A53; } .test-fail { color:#C0262D; }
-    .whatsapp { position:fixed; right:20px; bottom:20px; z-index:20; display:grid; place-items:center; width:54px; height:54px; border-radius:50%; background:#25D366; transition:transform .15s; }
-    .whatsapp:hover { transform:scale(1.06); }
-    .whatsapp svg { width:28px; fill:#fff; }
-    .print-view { display:none; }
-
-    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline:3px solid #A9C0FF; outline-offset:2px; }
-    .quote-card button:focus-visible { outline-color:#8FB0FF; }
-
-    @media (max-width:1000px) {
-      .layout { grid-template-columns:1fr; }
-      .quote-card { position:static; }
-      .presets { grid-template-columns:repeat(4,minmax(0,1fr)); }
-    }
-    @media (max-width:760px) {
-      .presets { grid-template-columns:repeat(2,minmax(0,1fr)); }
-      .platforms { grid-template-columns:repeat(3,minmax(0,1fr)); }
-      .fields { grid-template-columns:1fr; }
-      .contact a.mail { display:none; }
-    }
-    @media (max-width:640px) {
-      .shell { width:calc(100% - 32px); }
-      .step, .quote-card { padding:var(--s4); border-radius:18px; }
-      .step-grid { grid-template-columns:1fr; }
-      .mobile-bar { display:flex; position:fixed; left:12px; right:80px; bottom:14px; z-index:20; align-items:center; justify-content:space-between; gap:var(--s2); padding:10px 16px; border-radius:999px; background:var(--ink); color:#fff; text-decoration:none; font-size:12px; }
-      .mobile-bar strong { font-size:16px; font-variant-numeric:tabular-nums; }
-      .whatsapp { right:14px; bottom:14px; }
-      footer { padding-bottom:96px; }
-    }
-    @media (prefers-reduced-motion:reduce) { *, *::before, *::after { transition:none !important; animation:none !important; } html { scroll-behavior:auto; } }
-    @media print { body { background:#fff; } .topbar .contact, .intro, .layout, .whatsapp, footer, .test-panel, .mobile-bar { display:none !important; } .shell { width:100%; } .print-view { display:block !important; padding:0 24px; } .print-view h2 { font-size:24px; margin:0 0 4px; } .print-meta { color:var(--muted); font-size:11px; margin-bottom:22px; } .print-line { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--line); font-size:12px; } .print-total { display:flex; justify-content:space-between; padding-top:14px; font-size:17px; font-weight:700; } .print-included { margin-top:24px; font-size:11px; color:var(--muted); } }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="shell topbar">
     <a class="brand" href="#" aria-label="CloudyCode home"><span class="brand-mark" aria-hidden="true">&lt;<b>/</b>&gt;</span><span class="brand-name">cloudycode<small>Social media quote builder</small></span></a>
+    <nav class="tabs" aria-label="Services"><a href="index.html" aria-current="page">Social media</a><a href="website-it.html">Website &amp; IT</a></nav>
     <nav class="contact" aria-label="Contact"><a class="mail" href="mailto:info@cloudycode.net">info@cloudycode.net</a><a href="tel:+94766351053">+94 76 635 1053</a></nav>
   </header>
   <section class="shell intro">
@@ -238,7 +47,7 @@
       <section class="step">
         <div class="step-head"><span class="step-no">5</span><div class="grow"><h2>Quote details</h2><p>Optional.</p></div></div>
         <div class="fields">
-          <div class="field"><label for="clientName">Client name</label><input id="clientName" type="text" maxlength="100" autocomplete="organization" placeholder="e.g. Range Global Education"></div>
+          <div class="field"><label for="clientName">Client name</label><input id="clientName" type="text" maxlength="100" autocomplete="organization" placeholder="Client or business name"></div>
           <div class="field" id="prepayField"><label for="prepayMonths">Prepay term</label><select id="prepayMonths"><option value="1">1 month</option><option value="3">3 months · 5% off</option><option value="6">6 months · 10% off</option></select></div>
           <div class="field"><label for="adBudget">Ad budget (Rs)</label><input id="adBudget" type="number" min="0" max="10000000" step="100" inputmode="numeric" placeholder="0"><small>Paid by the client to the platform. Not in the total.</small></div>
         </div>
@@ -262,22 +71,23 @@
     const CONFIG = {
       currency: "Rs",
       content: {
-        staticPost:      { label: "Static post",               price: 1000 },
-        reel:            { label: "Reel / short video",         price: 2000 },
-        adCampaign:      { label: "Ad campaign setup & management", price: 2000 },
+        staticPost:      { label: "Static post",               price: 1000, desc: "Designed graphic post with caption and hashtags, sized for each platform." },
+        reel:            { label: "Reel / short video",         price: 2000, desc: "Short vertical video: editing, text captions, music and cover image." },
+        adCampaign:      { label: "Ad campaign setup & management", price: 2000, desc: "Audience targeting, ad creative set-up, budget pacing, monitoring and a results summary. Ad spend is not included." },
       },
       extras: {
-        story:           { label: "Story design",               price: 500,  placeholder: true },
-        carousel:        { label: "Carousel post (up to 5 slides)", price: 2500, placeholder: true },
-        youtubeLong:     { label: "YouTube long video (2–5 min edit)", price: 8000, placeholder: true },
-        eventCoverage:   { label: "Event photo/video coverage (half day)", price: 10000, placeholder: true },
+        story:           { label: "Story design",               price: 500,  placeholder: true, desc: "Single story frame designed for Instagram / Facebook stories." },
+        carousel:        { label: "Carousel post (up to 5 slides)", price: 2500, placeholder: true, desc: "Multi-slide post (up to 5 slides) with caption and hashtags." },
+        youtubeLong:     { label: "YouTube long video (2–5 min edit)", price: 8000, placeholder: true, desc: "2–5 minute edited video with title, description, tags and thumbnail." },
+        eventCoverage:   { label: "Event photo/video coverage (half day)", price: 10000, placeholder: true, desc: "Half-day on-site photo and video coverage of your event." },
       },
       platforms: {
-        facebook:  { label: "Facebook" },
-        instagram: { label: "Instagram" },
-        tiktok:    { label: "TikTok",   requiresVideo: true },
-        youtube:   { label: "YouTube",  requiresVideo: true },
-        linkedin:  { label: "LinkedIn" },
+        // `duties`: what we do on each platform, printed on the quote. Confirm wording with the team.
+        facebook:  { label: "Facebook",  duties: ["Posting and scheduling", "Captions and hashtags", "Comment replies", "Page info kept up to date"] },
+        instagram: { label: "Instagram", duties: ["Feed and reel posting", "Captions and hashtags", "Comment replies", "Profile grid kept consistent"] },
+        tiktok:    { label: "TikTok",    requiresVideo: true, duties: ["Video posting adapted for TikTok", "Trending sounds and hashtags", "Comment replies"] },
+        youtube:   { label: "YouTube",   requiresVideo: true, duties: ["Shorts and video uploads", "Titles, descriptions and tags", "Comment moderation"] },
+        linkedin:  { label: "LinkedIn",  duties: ["Company page posting", "Professional copy and hashtags", "Comment replies"] },
       },
       managementTiers: [
         { maxPieces: 6,        feePerPlatform: 1500 },
@@ -295,6 +105,16 @@
 
       // One-off campaigns: same management fee as monthly, plus this premium (no commitment, no recurring work).
       oneOffPremiumPct: 20,
+
+      // Printed quote. Confirm these with the team before sending to clients.
+      quote: {
+        validDays: 14,
+        notes: [
+          "Ad budget (money paid to Meta, TikTok or Google) is paid by the client directly to the platform and is not part of this quote.",
+          "Content is produced once and adapted for each selected platform, so each piece is charged once.",
+          "Monthly plans renew each month. Changes to the plan apply from the next month.",
+        ],
+      },
     };
 
     const PRESETS = [
@@ -428,15 +248,90 @@
     }
     function buildPrintView(result) {
       const view = $('printView'); view.replaceChildren();
-      view.append(el('h2', 'CloudyCode – Social Media Quote'));
-      view.append(el('div', `Client: ${state.clientName || '—'} · ${planLabel(state)} ·${state.mode === 'monthly' ? 'Monthly' : 'One-off'}`, 'print-meta'));
-      view.append(el('div', `Platforms: ${Object.keys(CONFIG.platforms).filter(key => state.platforms[key]).map(key => CONFIG.platforms[key].label).join(', ') || 'None'}`, 'print-meta'));
-      result.lines.forEach(item => { const row=el('div',undefined,'print-line'); row.append(el('span',item.note ? `${item.label} — ${item.note}` : `${item.quantity} ${item.label.toLowerCase()} × ${money(item.rate)}`),el('strong',money(item.amount))); view.append(row); });
-      if (result.rounding) { const row=el('div',undefined,'print-line'); row.append(el('span','Rounding'),el('strong',`${result.rounding > 0 ? '+' : ''}${money(result.rounding)}`)); view.append(row); }
-      const total=el('div',undefined,'print-total'); total.append(el('span','TOTAL'),el('strong',`${money(result.total)}${state.mode === 'monthly' ? ' / month' : ''}`)); view.append(total);
-      if (state.mode === 'monthly') view.append(el('div','Included: caption creation, hashtag research, profile management, monthly report','print-included'));
-      if (state.adBudget > 0) view.append(el('div',`Ad budget (paid directly to the platform, not included): ${money(state.adBudget)}`,'print-included'));
-      view.append(el('div','info@cloudycode.net · +94 76 635 1053','print-included'));
+      const monthly = state.mode === 'monthly';
+      const selected = Object.keys(CONFIG.platforms).filter(key => state.platforms[key]);
+      const now = new Date(); const pad = n => String(n).padStart(2, '0');
+      const fmtDate = d => d.toLocaleDateString('en-GB', {day:'numeric', month:'long', year:'numeric'});
+      const quoteNo = `QS-${String(now.getFullYear()).slice(2)}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
+      const validUntil = new Date(now.getTime() + CONFIG.quote.validDays * 86400000);
+      const per = monthly ? ' / month' : '';
+      const section = (title, intro) => { const box = el('section', undefined, 'pv-section'); box.append(el('h3', title)); if (intro) box.append(el('p', intro, 'pv-intro')); view.append(box); return box; };
+      const cell = (tag, text, cls) => el(tag, text, cls);
+
+      // Header
+      const head = el('div', undefined, 'pv-head');
+      const brand = el('div'); brand.append(el('div', 'cloudycode', 'pv-brand'), el('div', 'Social Media Quote', 'pv-title'));
+      const meta = el('div', undefined, 'pv-meta');
+      [['Quote no.', quoteNo], ['Date', fmtDate(now)], ['Valid until', fmtDate(validUntil)]].forEach(([k, v]) => { const row = el('div'); row.append(el('span', k), el('strong', v)); meta.append(row); });
+      head.append(brand, meta); view.append(head);
+
+      // Summary
+      const sum = el('div', undefined, 'pv-summary');
+      [['Prepared for', state.clientName || '—'], ['Plan', planLabel(state)], ['Billing', monthly ? 'Monthly management' : 'One-off campaign'], ['Platforms', selected.map(key => CONFIG.platforms[key].label).join(', ') || 'None']].forEach(([k, v]) => { const box = el('div'); box.append(el('span', k), el('strong', v)); sum.append(box); });
+      const totalBox = el('div', undefined, 'pv-sum-total'); totalBox.append(el('span', 'Total'), el('strong', `${money(result.total)}${per}`)); sum.append(totalBox);
+      view.append(sum);
+
+      // Charges
+      const charges = section('Charges', 'Each line shows what is included and how it is priced.');
+      const table = el('table', undefined, 'pv-table'); const thead = el('thead'); const hr = el('tr');
+      ['Item', 'Qty', 'Rate', 'Amount'].forEach((h, i) => hr.append(cell('th', h, i ? 'num' : ''))); thead.append(hr); table.append(thead);
+      const tbody = el('tbody');
+      const descFor = label => { const all = {...CONFIG.content, ...CONFIG.extras}; const map = {'Static posts':'staticPost','Reels / short videos':'reel','Carousel posts':'carousel','Story designs':'story','YouTube long videos':'youtubeLong','Ad campaign setup':'adCampaign','Event coverage':'eventCoverage'}; const item = all[map[label]]; return item ? `${item.desc || ''}${item.placeholder ? ' (Rate to be confirmed.)' : ''}` : ''; };
+      result.lines.forEach(item => {
+        const tr = el('tr'); const name = el('td'); name.append(el('strong', item.label));
+        let desc = descFor(item.label);
+        if (/management/i.test(item.label)) desc = `${item.quantity} platform${item.quantity > 1 ? 's' : ''} × ${money(item.rate)}. Rate set by monthly volume (${result.pieces} pieces). See breakdown below.`;
+        if (item.note) desc = `${item.note}. Covers short-term planning and coordination with no ongoing commitment.`;
+        if (desc) name.append(el('div', desc, 'pv-desc'));
+        tr.append(name, cell('td', item.note ? '—' : String(item.quantity), 'num'), cell('td', item.note ? '—' : money(item.rate), 'num'), cell('td', money(item.amount), 'num'));
+        tbody.append(tr);
+      });
+      if (result.rounding) { const tr = el('tr', undefined, 'pv-muted'); tr.append(cell('td', `Rounding to the nearest ${money(CONFIG.roundTo)}`), cell('td', ''), cell('td', ''), cell('td', `${result.rounding > 0 ? '+' : ''}${money(result.rounding)}`, 'num')); tbody.append(tr); }
+      table.append(tbody);
+      const tfoot = el('tfoot'); const fr = el('tr'); fr.append(cell('td', 'Total'), cell('td', ''), cell('td', ''), cell('td', `${money(result.total)}${per}`, 'num')); tfoot.append(fr); table.append(tfoot);
+      charges.append(table);
+      if (monthly && state.prepayMonths > 1) { const d = CONFIG.prepayDiscounts.find(item => item.months === state.prepayMonths); charges.append(el('p', `${state.prepayMonths}-month prepay (${d.pct}% off): ${money(result.discounted)} / month · ${money(result.discounted * state.prepayMonths)} paid upfront.`, 'pv-callout')); }
+      if (state.adBudget > 0) charges.append(el('p', `Suggested ad budget: ${money(state.adBudget)}, paid by the client directly to the platform. Not included in the total above.`, 'pv-callout pv-callout-alt'));
+
+      // Per platform
+      if (selected.length) {
+        const plat = section('What we do on each platform', `Content is created once and adapted for every platform below. Management is charged per platform because each one is posted, monitored and replied to separately.`);
+        const grid = el('div', undefined, 'pv-platforms');
+        const videoCount = state.reels + state.youtubeLong;
+        selected.forEach(key => {
+          const p = CONFIG.platforms[key]; const card = el('div', undefined, 'pv-plat');
+          const top = el('div', undefined, 'pv-plat-top'); top.append(el('strong', p.label), el('span', `${money(result.feePerPlatform)}${per}`)); card.append(top);
+          const parts = [];
+          if (p.requiresVideo) { if (state.reels) parts.push(`${state.reels} ${key === 'youtube' ? 'Shorts' : 'videos'}`); if (key === 'youtube' && state.youtubeLong) parts.push(`${state.youtubeLong} long video${state.youtubeLong > 1 ? 's' : ''}`); }
+          else { if (state.posts) parts.push(`${state.posts} post${state.posts > 1 ? 's' : ''}`); if (state.reels) parts.push(`${state.reels} reel${state.reels > 1 ? 's' : ''}`); if (state.carousels) parts.push(`${state.carousels} carousel${state.carousels > 1 ? 's' : ''}`); if (state.stories && key !== 'linkedin') parts.push(`${state.stories} stor${state.stories > 1 ? 'ies' : 'y'}`); }
+          card.append(el('div', parts.length ? `Content${monthly ? ' per month' : ''}: ${parts.join(', ')}` : (p.requiresVideo && !videoCount ? 'Needs video content' : 'No content selected'), 'pv-plat-content'));
+          const ul = el('ul'); (p.duties || []).forEach(d => ul.append(el('li', d))); card.append(ul);
+          grid.append(card);
+        });
+        plat.append(grid);
+      }
+
+      // How the price is worked out
+      const how = section('How this price is worked out');
+      const steps = el('ol', undefined, 'pv-steps');
+      steps.append(el('li', 'Content: each post, reel or extra is charged once at the rates above, however many platforms it goes to.'));
+      if (state.ads) steps.append(el('li', `Ad campaigns: ${money(CONFIG.content.adCampaign.price)} per campaign covers set-up and management. The ad budget itself is separate.`));
+      steps.append(el('li', `Platform management: a fee per platform, based on how many pieces we publish ${monthly ? 'each month' : 'in the campaign'}. More content means more posting, monitoring and replies.`));
+      if (!monthly) steps.append(el('li', `One-off premium: ${CONFIG.oneOffPremiumPct}% on top, because one-off campaigns need set-up and planning without a monthly commitment.`));
+      steps.append(el('li', `The total is rounded to the nearest ${money(CONFIG.roundTo)}.`));
+      how.append(steps);
+      const tiers = el('table', undefined, 'pv-table pv-tiers'); const th = el('tr'); ['Pieces per ' + (monthly ? 'month' : 'campaign'), 'Fee per platform'].forEach((h, i) => th.append(cell('th', h, i ? 'num' : ''))); const tt = el('thead'); tt.append(th); tiers.append(tt);
+      const tb = el('tbody'); let prev = 0;
+      CONFIG.managementTiers.forEach(tier => { const range = tier.maxPieces === Infinity ? `${prev + 1} or more` : `${prev ? prev + 1 : 1}–${tier.maxPieces}`; const current = result.pieces > prev && result.pieces <= tier.maxPieces; const tr = el('tr', undefined, current ? 'pv-current' : ''); tr.append(cell('td', current ? `${range}  ← your plan (${result.pieces})` : range), cell('td', money(tier.feePerPlatform), 'num')); tb.append(tr); prev = tier.maxPieces; });
+      tiers.append(tb); how.append(tiers);
+
+      // Included + notes
+      if (monthly) { const inc = section('Included in every monthly plan'); const ul = el('ul', undefined, 'pv-included'); ['Caption creation', 'Hashtag research', 'Profile management', 'Monthly performance report'].forEach(t => ul.append(el('li', t))); inc.append(ul); }
+      const notes = section('Notes'); const nl = el('ul', undefined, 'pv-notes');
+      [`This quote is valid until ${fmtDate(validUntil)}.`, ...CONFIG.quote.notes, ...(result.warnings.some(w => w.includes('placeholder')) ? ['Some rates marked "to be confirmed" may change before work starts.'] : [])].forEach(t => nl.append(el('li', t)));
+      notes.append(nl);
+
+      const foot = el('div', undefined, 'pv-foot'); foot.append(el('strong', 'CloudyCode'), el('span', 'info@cloudycode.net · +94 76 635 1053 · WhatsApp +94 76 635 1053')); view.append(foot);
       return view;
     }
     function renderPresetButtons() { const wrap = $('presets'); wrap.replaceChildren(); PRESETS.forEach((preset,index) => { const button = el('button', undefined, 'preset'); button.type='button'; const price = calculate({...state, ...presetState(preset), linkedin:false}).total; const meta = `${preset.platforms.length} platforms · ${preset.posts}P ${preset.reels}R · ${preset.ads} ads`; button.append(el('span',preset.name,'p-name'), el('span',money(price),'p-price num'), el('span',meta,'p-meta')); if (preset.name === 'Premium') button.append(el('span','Most popular','p-tag')); const check = el('span',undefined,'p-check'); check.innerHTML = TICK; button.append(check); button.setAttribute('aria-label', `${preset.name} package, ${money(price)}, ${meta}`); button.addEventListener('click', () => applyPreset(index)); wrap.append(button); }); }
