@@ -22,7 +22,7 @@ The pricing logic below reproduces CloudyCode's three published package prices e
 | Mode | Use for | What's charged |
 |---|---|---|
 | **Monthly management** (default) | Ongoing monthly social media clients | Content + ad campaign setup + platform management fee + extras, then rounded |
-| **One-off campaign** | Events and short campaigns (e.g. a 10-day event push) | Content + ad campaign setup + extras only. No platform management fee, no rounding |
+| **One-off campaign** | Events and short campaigns (e.g. a 10-day event push) | Same as monthly (content + ads + management fee + extras) **plus a 20% one-off premium**, then rounded. No prepay discount. Always costs more than the same plan on monthly |
 
 ---
 
@@ -54,7 +54,7 @@ const CONFIG = {
     linkedin:  { label: "LinkedIn" },
   },
 
-  // Monthly mode only. Fee is charged PER SELECTED PLATFORM, based on total monthly pieces.
+  // Both modes. Fee is charged PER SELECTED PLATFORM, based on total monthly pieces.
   // pieces = staticPosts + reels + carousels + youtubeLong  (stories and ads do NOT count)
   managementTiers: [
     { maxPieces: 6,        feePerPlatform: 1500 },
@@ -75,6 +75,9 @@ const CONFIG = {
 
   // Suggest a package if it costs no more than this % above the custom quote.
   upsellThresholdPct: 10,
+
+  // One-off campaigns: same management fee as monthly, plus this premium.
+  oneOffPremiumPct: 20,
 };
 ```
 
@@ -96,7 +99,7 @@ total         = roundHalfUp(subtotal, 1000)          // floor((subtotal + 500) /
 discounted    = total × (1 − prepayPct/100), rounded to nearest Rs 100 (half up: 33,250 → 33,300)
 ```
 
-**One-off campaign mode:** `total = contentCost + adCost + extrasCost` (no management fee, no rounding, no prepay discount).
+**One-off campaign mode:** `premium = (contentCost + adCost + extrasCost + managementFee) × 20%`, `total = roundHalfUp(subtotal + premium, 1000)`. The management line is labelled "Campaign management". No prepay discount. One-off must always be higher than the same plan on monthly (test T12).
 
 **Ad budget** (the money paid to Meta/TikTok/Google) is a separate optional input. Show it on the quote as "Ad budget (paid by client directly to the platform)". **Never add it to the CloudyCode total.**
 
@@ -194,11 +197,12 @@ If one qualifies, show the cheapest one: "For Rs X more you get the Growth packa
 | T3 | Monthly | FB, IG, TikTok, YouTube | 15 | 6 | 6 | – | 75,000 |
 | T4 | Monthly | FB, IG, YouTube, LinkedIn | 6 | 0 | 2 | – | 16,000 + YouTube-needs-video warning |
 | T5 | Monthly | FB, IG, TikTok, LinkedIn | 4 | 2 | 2 | – | 18,000 (Essential + TikTok + LinkedIn) |
-| T6 | One-off | FB, IG | 3 | 2 | 2 | – | 11,000 |
+| T6 | One-off | FB, IG | 3 | 2 | 2 | – | 17,000 (14,000 + 20% = 16,800, rounds up) |
 | T7 | Monthly | FB, IG | 5 | 2 | 0 | – | 18,000 (subtotal 17,500, rounds up) |
 | T8 | Monthly | FB, IG, TikTok | 6 | 4 | 4 | 3-month prepay | 35,000 → 33,300/month |
 | T9 | Monthly | FB, IG | 4 | 2 | 2 | Ad budget 20,000 | Total stays 15,000; ad budget shown separately |
 | T10 | Monthly | FB, IG | 6 | 0 | 0 | – | 9,000 + "Tier limit" warning showing +Rs 7,000 (a 7th post totals 16,000) |
+| T12 | One-off | each of the 8 presets | | | | | One-off total > monthly total (18,000 / 28,000 / 35,000 / 42,000 / 57,000 / 65,000 / 72,000 / 90,000) |
 | T11 | Presets | each of the 8 presets | | | | | 15,000 / 24,000 / 29,000 / 35,000 / 48,000 / 54,000 / 60,000 / 75,000 |
 
 The tier-limit figure X = (rounded total with one more static post) − (current rounded total). Compute it in code; never hard-code it.
